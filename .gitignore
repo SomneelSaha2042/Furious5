@@ -1,9 +1,15 @@
-node_modules
-dist
+node_modules/
+dist/
 .DS_Store
-server/public
-vite.config.ts.*
+.idea/
+.vscode/
+.vscode-test/
+*.iml
 *.tar.gz
+*.tgz
+coverage/
+server/public/
+vite.config.ts.*
 
 # Environment variables
 .env
@@ -20,13 +26,17 @@ pnpm-debug.log*
 .pid
 
 # Editor directories and files
-.idea
-.vscode
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+*.cache
+.turbo/
+.parcel-cache/
+.next/
+.nuxt/
+.svelte-kit/
 
 # Build artifacts
 *.tsbuildinfo
