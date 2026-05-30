@@ -63,7 +63,7 @@ Screenshots and short clips live in `attached_assets/` to guide future styling t
 
 1. **Clone the repository**
    ```bash
-   git clone <your-repo-url>
+   git clone https://github.com/SomneelSaha2042/Furious5
    cd furious-five
    ```
 
