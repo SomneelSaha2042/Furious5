@@ -1,60 +1,73 @@
 # Furious Five
 
-Furious Five is a real-time multiplayer card game for 2-5 players. It is built as a single TypeScript app: React for the frontend, Express for HTTP/static serving, and `ws` for the `/ws` multiplayer channel.
+Productionized real-time multiplayer WebSocket system with Redis-backed state, safe room mutations, reconnect recovery, health checks, Docker deployment, and load testing.
 
-The app runs locally with in-memory room storage. In production, setting `REDIS_URL` switches game state to Redis so rooms can survive app restarts and player reconnects.
+This repo is a TypeScript full-stack application used to run a low-latency multiplayer room system. The domain is a card-table experience, but the engineering focus is the real-time architecture: WebSocket session coordination, Redis persistence, race-safe state transitions, restart recovery, and production deployment on Railway.
 
-## Current Capabilities
+## Production Architecture
 
-- Real-time multiplayer rooms over WebSocket at `/ws`
-- React frontend served by the same Express service
-- Local development with in-memory `MemStorage`
-- Production room persistence with Redis when `REDIS_URL` is configured
-- Per-room mutation safety with `storage.mutateRoom(...)`
-- Redis room TTLs, reconnect recovery, and active-room tracking
-- Health endpoints with Redis status, active rooms, active sockets, memory, and uptime
-- Docker-first production deployment, including Railway Hobby
-- Configurable WebSocket load test for roughly 100 concurrent clients
+```text
+Browser clients
+  -> React frontend
+  -> WebSocket events over /ws
+  -> Express Node service
+     -> serves static React build
+     -> owns in-process WebSocket connection maps
+     -> validates and applies game/room mutations
+     -> persists room state in Redis when REDIS_URL is set
+     -> exposes health and metrics endpoints
+```
 
-The current production target is one app replica. Do not scale to multiple replicas until WebSocket fanout is moved to Redis Pub/Sub or another distributed adapter.
+Current production target:
 
-## Game Overview
+```text
+1 Dockerized Node service
+1 Redis service
+1 app replica
+```
 
-Furious Five is a fast card game where players try to reduce their hand total and call at the right moment.
+In-memory storage is a local-development fallback only. Production state is Redis-backed.
 
-Rules:
+## Key Capabilities
 
-- Each player starts with 5 cards.
-- Ace is worth 1; numbered cards are face value; J/Q/K are 11/12/13.
-- On your turn, drop a valid card set, then draw from the deck or table.
-- You can call when your hand total is 5 or less.
-- The lowest final total wins the round.
+- WebSocket server using `ws` at `/ws`
+- Redis-backed room state persistence for production
+- Local `MemStorage` fallback when `REDIS_URL` is not set
+- Per-room mutation safety through `storage.mutateRoom(...)`
+- Redis token-based room locks to prevent stale concurrent writes
+- Reconnect recovery using saved `roomCode` and `playerId`
+- Room TTL refresh and active-room tracking in Redis
+- Runtime health checks with Redis status, active rooms, active sockets, memory, and uptime
+- Docker-first production deployment for Railway
+- Configurable WebSocket load test for roughly 100 concurrent users
 
-Valid drops:
+## What This Demonstrates
 
-- Single card
-- Pair
-- Trips
-- Quads
-- Straight of 3 or more consecutive ranks
+- Productionizing a real-time WebSocket app beyond a purely in-memory prototype
+- Designing a storage abstraction that supports local development and Redis production mode
+- Preventing race conditions in room-based multiplayer state with mutation locks
+- Preserving room state across app restarts and reconnects
+- Instrumenting a Node service with operational health and load-test visibility
+- Deploying a single-service React + Express app through a production Dockerfile
 
-## Tech Stack
+## Stack
 
 Frontend:
 
 - React 18
 - TypeScript
-- Tailwind CSS and shadcn/ui components
+- Tailwind CSS and shadcn/ui
 - Framer Motion
-- Wouter routing
+- Wouter
 
 Backend:
 
 - Node.js 20
 - Express
-- `ws` WebSocket server at `/ws`
-- Redis-backed storage for production rooms
-- Zod validation for room state and socket payloads
+- `ws` WebSocket server
+- Redis production storage
+- Zod validation
+- Helmet, CORS, compression, and rate limiting
 
 Build and deployment:
 
@@ -62,6 +75,110 @@ Build and deployment:
 - esbuild server bundle
 - Multi-stage Dockerfile
 - Railway-compatible `PORT` handling
+
+## Runtime Storage
+
+Storage is selected at startup:
+
+```ts
+REDIS_URL set    -> RedisStorage
+REDIS_URL absent -> MemStorage
+```
+
+Redis stores:
+
+```text
+room:{roomCode}      JSON serialized room state
+rooms:active         active room code set
+roomlock:{roomCode}  short-lived mutation lock
+```
+
+Defaults:
+
+```text
+ROOM_TTL_SECONDS=14400
+REDIS_LOCK_TTL_MS=5000
+REDIS_LOCK_TIMEOUT_MS=2000
+```
+
+All important state changes go through:
+
+```ts
+storage.mutateRoom(roomCode, mutator)
+```
+
+That gives the app one safe mutation path for room joins, ready state changes, turn actions, reconnect status updates, and delayed disconnect handling.
+
+## WebSocket Flow
+
+Clients connect to:
+
+```text
+/ws
+```
+
+Common client events:
+
+```text
+room:create
+room:join
+player:ready
+game:start
+turn:call
+turn:drop
+turn:drawDeck
+turn:drawFromTable
+round:new
+game:getState
+ping
+```
+
+Common server events:
+
+```text
+room:created
+room:joined
+state:update
+notification
+error
+pong
+```
+
+WebSocket connections stay in memory:
+
+```ts
+Map<roomCode, Set<WebSocket>>
+```
+
+This keeps single-replica broadcasts simple and fast. It also means multi-replica deployment is intentionally not enabled yet.
+
+## Health Checks
+
+Endpoints:
+
+```text
+/health
+/api/health
+```
+
+Example response:
+
+```json
+{
+  "status": "healthy",
+  "redis": "connected",
+  "activeRooms": 3,
+  "activeSockets": 12,
+  "messagesReceived": 240,
+  "messagesSent": 520,
+  "roomsCreated": 4,
+  "uptime": 1800,
+  "memoryMb": 140,
+  "heapUsedMb": 45
+}
+```
+
+If Redis cannot be queried, health returns `status: "degraded"` and includes Redis error context when available.
 
 ## Project Structure
 
@@ -71,7 +188,7 @@ server/index.ts          Express entrypoint, middleware, /health
 server/routes.ts         API routes and WebSocket handlers
 server/storage/          MemStorage, RedisStorage, mutation API
 server/metrics.ts        Runtime metrics snapshot
-shared/game-engine.ts    Pure game rules and state transitions
+shared/game-engine.ts    State transition logic
 shared/game-types.ts     Shared TypeScript types and Zod schemas
 scripts/build.mjs        Production build script
 scripts/load-ws.ts       WebSocket load-test script
@@ -86,15 +203,8 @@ Prerequisites:
 - Node.js 20+
 - npm
 
-Install dependencies:
-
 ```bash
 npm install
-```
-
-Start the development server:
-
-```bash
 npm run dev
 ```
 
@@ -104,7 +214,7 @@ Open:
 http://localhost:5000
 ```
 
-By default, local development uses in-memory storage. To test Redis locally, run a Redis instance and set `REDIS_URL`.
+Local development uses `MemStorage` unless `REDIS_URL` is set.
 
 ## Scripts
 
@@ -127,50 +237,17 @@ npm run docker:stop
 
 ## Environment Variables
 
-Common variables:
-
 ```text
 NODE_ENV=production
 PORT=5000
 CORS_ORIGIN=https://yourdomain.com
-```
-
-Redis production variables:
-
-```text
 REDIS_URL=redis://...
 ROOM_TTL_SECONDS=14400
 REDIS_LOCK_TTL_MS=5000
 REDIS_LOCK_TIMEOUT_MS=2000
 ```
 
-If `REDIS_URL` is absent, the server uses local `MemStorage`.
-
-## Health Checks
-
-The app exposes:
-
-```text
-/health
-/api/health
-```
-
-Example response:
-
-```json
-{
-  "status": "healthy",
-  "redis": "connected",
-  "activeRooms": 3,
-  "activeSockets": 12,
-  "messagesReceived": 240,
-  "messagesSent": 520,
-  "uptime": 1800,
-  "memoryMb": 140
-}
-```
-
-When Redis is unavailable, health returns `status: "degraded"` and includes Redis error context when available.
+`REDIS_URL` is the switch between local fallback storage and production Redis persistence.
 
 ## Production Deployment
 
@@ -185,9 +262,13 @@ ROOM_TTL_SECONDS=14400
 REDIS_URL=${{Redis.REDIS_URL}}
 ```
 
-Keep app replicas at `1`.
+Keep app replicas at:
 
-See [RAILWAY_DEPLOYMENT.md](RAILWAY_DEPLOYMENT.md) for the complete setup.
+```text
+1
+```
+
+See [RAILWAY_DEPLOYMENT.md](RAILWAY_DEPLOYMENT.md) for the full setup.
 
 Generic Docker run:
 
@@ -204,7 +285,15 @@ docker run -d \
 
 ## Load Testing
 
-Default profile: 20 rooms, 5 players per room, 100 connected clients.
+Default production-readiness profile:
+
+```text
+20 rooms
+5 clients per room
+100 connected WebSocket clients
+```
+
+Run:
 
 ```bash
 npm run load:ws -- --url=wss://your-app.up.railway.app/ws --rooms=20 --players=5 --durationMs=600000
@@ -215,7 +304,8 @@ Watch:
 - Error count
 - Disconnect count
 - p95 latency
-- `/health` memory and Redis status
+- Redis status
+- Memory usage
 
 ## Scaling Notes
 
@@ -224,11 +314,11 @@ Current safe production shape:
 ```text
 1 Node service replica
 1 Redis service
-in-memory WebSocket connection map
 Redis room state
+in-memory WebSocket connection map
 ```
 
-Do not run multiple app replicas yet. Room state is shared through Redis, but WebSocket broadcasts are still local to the process. Multi-replica support needs Redis Pub/Sub or a similar distributed fanout layer.
+Do not run multiple app replicas yet. Room state is shared through Redis, but WebSocket broadcasts are still local to the process. Multi-replica support needs Redis Pub/Sub or another distributed fanout layer.
 
 ## License
 
