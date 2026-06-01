@@ -5,12 +5,13 @@ Furious5 should deploy as one Node web service plus one Redis service. Do not en
 ## Project Setup
 
 1. Create a Railway project from the GitHub repo.
-2. Configure the app service:
-   - Build command: `npm run build`
-   - Start command: `npm start`
-   - Replicas: `1`
-3. Add a Redis database service in the same Railway project.
-4. Keep Redis private to the project unless temporary debugging requires otherwise.
+2. Let Railway build the app from the root `Dockerfile`.
+3. Do not set custom Railway build or start commands unless you intentionally stop using Docker.
+4. Set replicas to `1`.
+5. Add a Redis database service in the same Railway project.
+6. Keep Redis private to the project unless temporary debugging requires otherwise.
+
+The Dockerfile runs `npm ci`, `npm run build`, prunes development dependencies, and starts `node dist/index.js`. Railway should only need the Dockerfile plus the environment variables below.
 
 ## Environment Variables
 

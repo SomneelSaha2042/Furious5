@@ -1,58 +1,42 @@
-# Multi-stage build for production
-FROM node:20-alpine AS builder
+# Multi-stage build for Railway and production
+FROM node:20-alpine AS base
 
-# Set working directory
 WORKDIR /app
 
-# Copy package files
+RUN apk add --no-cache dumb-init
+
 COPY package*.json ./
 
-# Install ALL dependencies (including dev) for building
-RUN npm ci && \
-    npm cache clean --force
+FROM base AS builder
 
-# Copy source code
+RUN npm ci
+
 COPY . .
 
-# Build the application
 RUN npm run build
 
-# Production stage
-FROM node:20-alpine AS production
+RUN npm prune --omit=dev && npm cache clean --force
 
-# Set working directory
-WORKDIR /app
+FROM base AS production
 
-# Create non-root user
 RUN addgroup -g 1001 -S nodejs && \
     adduser -S nodejs -u 1001
 
-# Copy package files
-COPY package*.json ./
-
-# Install only production dependencies
-RUN npm ci --omit=dev && \
-    npm cache clean --force
-
-# Copy built application from builder
+COPY --from=builder --chown=nodejs:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
-
-# Copy shared files that might be needed at runtime
+COPY --chown=nodejs:nodejs package*.json ./
 COPY --chown=nodejs:nodejs shared ./shared
 
-# Switch to non-root user
 USER nodejs
 
-# Expose the port
 EXPOSE 5000
 
-# Set environment variables
-ENV NODE_ENV=production
-ENV PORT=5000
+ENV NODE_ENV=production \
+    PORT=5000 \
+    NODE_OPTIONS="--max-old-space-size=512"
 
-# Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:5000/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
+  CMD node -e "const port=process.env.PORT||5000; require('http').get('http://127.0.0.1:' + port + '/health', (r) => { process.exit(r.statusCode === 200 ? 0 : 1); }).on('error', () => process.exit(1));"
 
-# Start the application
+ENTRYPOINT ["dumb-init", "--"]
 CMD ["node", "dist/index.js"]
