@@ -1,30 +1,26 @@
-// Card component for rendering a playing card with various states and sizes
 import { cn } from '@/lib/utils';
 import type { Card as CardType } from '@shared/game-types';
 
-// Props for the Card component
 interface CardProps {
-  card: CardType; // Card data (rank and suit)
-  selected?: boolean; // Whether the card is selected
-  faceDown?: boolean; // Whether the card is face down
-  size?: 'sm' | 'md' | 'lg'; // Card size
-  onClick?: () => void; // Click handler
-  className?: string; // Additional CSS classes
+  card: CardType;
+  selected?: boolean;
+  faceDown?: boolean;
+  size?: 'sm' | 'md' | 'lg';
+  onClick?: () => void;
+  className?: string;
 }
 
 export function Card({ card, selected = false, faceDown = false, size = 'md', onClick, className }: CardProps) {
-  // Returns the Unicode symbol for a suit
   const getSuitSymbol = (suit: CardType['s']) => {
     switch (suit) {
-      case 'C': return '♣';
-      case 'D': return '♦';
-      case 'H': return '♥';
-      case 'S': return '♠';
+      case 'C': return '\u2663';
+      case 'D': return '\u2666';
+      case 'H': return '\u2665';
+      case 'S': return '\u2660';
       default: return '?';
     }
   };
-  
-  // Converts rank number to display string (A, 2-10, J, Q, K)
+
   const getRankString = (rank: CardType['r']) => {
     if (rank === 1) return 'A';
     if (rank === 11) return 'J';
@@ -32,64 +28,54 @@ export function Card({ card, selected = false, faceDown = false, size = 'md', on
     if (rank === 13) return 'K';
     return rank.toString();
   };
-  
-  // Determines if the card suit is red (for styling)
+
   const isRed = card.s === 'D' || card.s === 'H';
-  
-  // Tailwind classes for card size
+
   const sizeClasses = {
-    sm: 'w-8 h-11',
-    md: 'w-12 h-17',
-    lg: 'w-16 h-22'
+    sm: 'h-12 w-9',
+    md: 'h-[4.75rem] w-14',
+    lg: 'h-[6rem] w-[4.5rem]',
   };
-  
-  // Tailwind classes for text size
+
   const textSizeClasses = {
     sm: 'text-xs',
     md: 'text-lg',
-    lg: 'text-xl'
+    lg: 'text-2xl',
   };
-  
-  // Render face-down card (no rank/suit shown)
+
   if (faceDown) {
     return (
-      <div 
+      <div
         className={cn(
-          'card bg-gradient-to-br from-blue-800 to-blue-900 rounded border cursor-pointer',
+          'relative overflow-hidden rounded-md border border-white/15 bg-secondary shadow-sm',
           sizeClasses[size],
-          className
+          className,
         )}
         onClick={onClick}
-      />
+      >
+        <div className="absolute inset-1 rounded-[4px] border border-white/10" />
+        <div className="absolute inset-0 bg-[repeating-linear-gradient(135deg,transparent_0_7px,rgba(255,255,255,.08)_7px_8px)]" />
+      </div>
     );
   }
-  
-  // Render face-up card with rank and suit
+
   return (
-    <div 
+    <div
       className={cn(
-        'card bg-white border flex flex-col items-center justify-center cursor-pointer transition-all duration-200',
+        'relative flex flex-col items-center justify-center rounded-md border border-zinc-200 bg-white text-zinc-950 shadow-sm transition duration-200',
         sizeClasses[size],
-        selected && 'selected transform -translate-y-2 border-2 border-accent shadow-lg', // Selected styling
-        !selected && 'hover:shadow-lg hover:transform hover:-translate-y-1', // Hover styling
-        className
+        selected && 'border-accent shadow-lg ring-2 ring-accent/45',
+        !selected && 'hover:-translate-y-1 hover:shadow-md',
+        className,
       )}
       onClick={onClick}
       data-testid={`card-${getRankString(card.r)}${card.s}`}
     >
-      {/* Card rank */}
-      <div className={cn(
-        'font-bold',
-        textSizeClasses[size],
-        isRed ? 'text-red-600' : 'text-gray-800'
-      )}>
+      <div className="absolute inset-1 rounded-[4px] border border-zinc-100" />
+      <div className={cn('relative font-bold leading-none', textSizeClasses[size], isRed ? 'text-red-600' : 'text-zinc-900')}>
         {getRankString(card.r)}
       </div>
-      {/* Card suit */}
-      <div className={cn(
-        'text-sm',
-        isRed ? 'text-red-600' : 'text-gray-800'
-      )}>
+      <div className={cn('relative mt-1 text-base leading-none', isRed ? 'text-red-600' : 'text-zinc-900')}>
         {getSuitSymbol(card.s)}
       </div>
     </div>

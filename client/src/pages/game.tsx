@@ -14,7 +14,12 @@ import {
   AccordionTrigger,
 } from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
-import { DoorOpen, Gamepad2, Link2, Loader2, RefreshCw, ShieldQuestion, Wifi } from 'lucide-react';
+import { DoorOpen, Loader2, ShieldQuestion } from 'lucide-react';
+import {
+  ReconnectIcon,
+  RoomCodeIcon,
+  SocketLiveIcon,
+} from '@/components/icons/Furious5Icons';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -76,10 +81,10 @@ export default function Game() {
   // Show loading while checking connection
   if (!roomCode || !playerId) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background px-4">
+      <div className="app-backdrop flex min-h-screen items-center justify-center px-4">
         <div className="space-y-3 text-center">
           <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">Connecting to game…</p>
+          <p className="text-sm text-muted-foreground">Connecting to game...</p>
         </div>
       </div>
     );
@@ -155,7 +160,7 @@ export default function Game() {
   const connectionLabel = isConnected ? 'Connected' : 'Disconnected';
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="app-backdrop min-h-screen">
       <AlertDialog open={staleSession} onOpenChange={() => {}}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -177,23 +182,23 @@ export default function Game() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
-        <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="mx-auto flex min-h-screen w-full max-w-[1480px] flex-col gap-6 px-4 py-6 sm:px-6 lg:px-10 xl:px-14">
+        <header className="flex flex-col gap-4 border-b border-border pb-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
-            <div className="grid h-12 w-12 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-table">
-              <Gamepad2 className="h-6 w-6" />
+            <div className="grid h-12 w-12 place-items-center rounded-lg">
+              <img src="/icons/furious5-app-icon.svg" alt="" className="h-12 w-12" />
             </div>
             <div>
               <h1 className="text-3xl font-semibold">Furious Five</h1>
               <div className="mt-1 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
                 <span className="flex items-center gap-1">
-                  <Link2 className="h-4 w-4" />
+                  <RoomCodeIcon className="h-4 w-4" />
                   <span className="font-mono font-semibold" data-testid="room-code">
                     {roomCode}
                   </span>
                 </span>
                 <Badge variant="outline" className="flex items-center gap-2 text-xs">
-                  <Wifi className={isConnected ? 'h-3.5 w-3.5 text-primary' : 'h-3.5 w-3.5 text-destructive'} />
+                  <SocketLiveIcon className={isConnected ? 'h-3.5 w-3.5 text-primary' : 'h-3.5 w-3.5 text-destructive'} />
                   <span data-testid="connection-indicator">{connectionLabel}</span>
                 </Badge>
               </div>
@@ -264,7 +269,7 @@ export default function Game() {
                     className="flex items-center gap-2"
                     onClick={() => requestGameState?.()}
                   >
-                    <RefreshCw className="h-4 w-4" />
+                    <ReconnectIcon className="h-4 w-4" />
                     Request latest state
                   </Button>
                   <Button

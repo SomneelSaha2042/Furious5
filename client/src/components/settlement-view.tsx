@@ -1,8 +1,9 @@
 import { Button } from '@/components/ui/button';
 import { Card } from './card';
 import type { GameState } from '@shared/game-types';
-import { Award, ArrowRightCircle, Coins, Crown } from 'lucide-react';
+import { Award, ArrowRightCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { ChipStackIcon, ShowdownIcon } from '@/components/icons/Furious5Icons';
 
 interface SettlementViewProps {
   gameState: GameState;
@@ -25,10 +26,10 @@ export function SettlementView({ gameState, onStartNewRound }: SettlementViewPro
   
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-8">
-      <div className="surface-soft glass-panel rounded-3xl border border-border/60 p-6 sm:p-8">
+      <div className="table-panel p-6 sm:p-8">
         <div className="text-center">
           <div className="mx-auto mb-4 h-14 w-14 rounded-full bg-primary/10 text-primary grid place-items-center">
-            <Crown className="h-6 w-6" />
+            <ShowdownIcon className="h-6 w-6" />
           </div>
           <h2 className="text-3xl font-semibold" data-testid="settlement-title">
             Round settlement
@@ -52,7 +53,7 @@ export function SettlementView({ gameState, onStartNewRound }: SettlementViewPro
             const payoutTone = payout > 0 ? 'text-primary' : payout < 0 ? 'text-destructive' : 'text-muted-foreground';
 
             return (
-              <div key={player.id} className="rounded-2xl border border-border/60 bg-muted/40 p-6 backdrop-blur">
+              <div key={player.id} className="rounded-lg border border-border bg-muted/40 p-6">
                 <div className="flex flex-col items-center gap-3 text-center">
                   <div
                     className={cn(
@@ -65,7 +66,7 @@ export function SettlementView({ gameState, onStartNewRound }: SettlementViewPro
                   <div>
                     <p className="text-lg font-semibold" data-testid={`player-name-${index}`}>
                       {player.name}
-                      {isCaller && <span className="text-xs text-muted-foreground"> · caller</span>}
+                      {isCaller && <span className="text-xs text-muted-foreground"> - caller</span>}
                     </p>
                     <p className="text-xs text-muted-foreground">
                       Hand total{' '}
@@ -76,7 +77,7 @@ export function SettlementView({ gameState, onStartNewRound }: SettlementViewPro
                     </p>
                   </div>
                   <div className={cn('flex items-center gap-2 text-2xl font-semibold', payoutTone)} data-testid={`player-payout-${index}`}>
-                    <Coins className="h-5 w-5" />
+                    <ChipStackIcon className="h-5 w-5" />
                     <span>{payout > 0 ? '+' : ''}{payout}</span>
                   </div>
                   <p className="text-xs text-muted-foreground">
@@ -94,7 +95,7 @@ export function SettlementView({ gameState, onStartNewRound }: SettlementViewPro
           })}
         </div>
 
-        <div className="mt-10 rounded-2xl border border-border/60 bg-card/70 p-6 backdrop-blur">
+        <div className="mt-10 rounded-lg border border-border bg-card p-6">
           <h3 className="flex items-center justify-center gap-2 text-base font-semibold">
             <Award className="h-5 w-5 text-accent" />
             Running totals

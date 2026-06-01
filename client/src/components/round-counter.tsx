@@ -1,6 +1,6 @@
-import { Clock, Hash } from "lucide-react";
 import { formatDuration, intervalToDuration } from "date-fns";
 import { useState, useEffect } from "react";
+import { LobbyIcon, TimerIcon } from "@/components/icons/Furious5Icons";
 
 interface RoundCounterProps {
   roundNumber: number;
@@ -40,7 +40,7 @@ export function RoundCounter({
   return (
     <div className="flex items-center gap-4 px-4 py-2 bg-white/50 dark:bg-gray-900/50 rounded-lg border border-gray-200 dark:border-gray-700 backdrop-blur-sm" data-testid="round-counter">
       <div className="flex items-center gap-2">
-        <Hash className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+        <LobbyIcon className="h-4 w-4 text-primary" />
         <span className="text-sm font-medium text-gray-900 dark:text-gray-100" data-testid="text-round-number">
           Round {roundNumber}
         </span>
@@ -49,7 +49,7 @@ export function RoundCounter({
       <div className="w-px h-4 bg-gray-300 dark:bg-gray-600" />
       
       <div className="flex items-center gap-2">
-        <Clock className="h-4 w-4 text-green-600 dark:text-green-400" />
+        <TimerIcon className="h-4 w-4 text-primary" />
         <span className="text-sm font-medium text-gray-900 dark:text-gray-100 font-mono" data-testid="text-game-duration">
           {formattedDuration || '0:00'}
         </span>

@@ -3,46 +3,46 @@
 @tailwind utilities;
 
 :root {
-  --background: #f7f4ec;
-  --foreground: #141521;
-  --muted: #ebe6dc;
-  --muted-foreground: #595a68;
-  --card: rgba(255, 255, 255, 0.8);
-  --card-foreground: #1f212f;
-  --popover: rgba(255, 255, 255, 0.95);
-  --popover-foreground: #141521;
-  --primary: #1f8a70;
-  --primary-foreground: #fdfbf5;
-  --secondary: #233746;
-  --secondary-foreground: #f5efe2;
-  --accent: #f6c542;
-  --accent-foreground: #1f212f;
-  --destructive: #c24747;
+  --background: #f6f7f2;
+  --foreground: #16181d;
+  --muted: #e9ece6;
+  --muted-foreground: #626973;
+  --card: #ffffff;
+  --card-foreground: #171a20;
+  --popover: #ffffff;
+  --popover-foreground: #171a20;
+  --primary: #0f766e;
+  --primary-foreground: #f8fffd;
+  --secondary: #263241;
+  --secondary-foreground: #f6f8fb;
+  --accent: #d9a21b;
+  --accent-foreground: #171a20;
+  --destructive: #b4232c;
   --destructive-foreground: #fff8f8;
-  --border: #d9d1c1;
-  --input: #d2c8b7;
-  --ring: #2ea285;
-  --chart-1: #1f8a70;
-  --chart-2: #f6c542;
-  --chart-3: #e76f51;
-  --chart-4: #33658a;
-  --chart-5: #7d6394;
-  --sidebar-background: rgba(255, 255, 255, 0.75);
-  --sidebar-foreground: #1f212f;
-  --sidebar-primary: #1f8a70;
-  --sidebar-primary-foreground: #fdfbf5;
-  --sidebar-accent: rgba(31, 138, 112, 0.08);
-  --sidebar-accent-foreground: #1f8a70;
-  --sidebar-border: rgba(31, 138, 112, 0.12);
-  --sidebar-ring: rgba(31, 138, 112, 0.5);
+  --border: #d7dcd4;
+  --input: #cbd2ca;
+  --ring: #0f766e;
+  --chart-1: #0f766e;
+  --chart-2: #d9a21b;
+  --chart-3: #b85f38;
+  --chart-4: #3f6f8f;
+  --chart-5: #6b5d93;
+  --sidebar-background: #ffffff;
+  --sidebar-foreground: #171a20;
+  --sidebar-primary: #0f766e;
+  --sidebar-primary-foreground: #f8fffd;
+  --sidebar-accent: #e6efec;
+  --sidebar-accent-foreground: #0f766e;
+  --sidebar-border: #d7dcd4;
+  --sidebar-ring: #0f766e;
 
-  --felt-base: #145a3d;
-  --felt-grid: rgba(11, 102, 66, 0.28);
-  --felt-border: rgba(10, 55, 36, 0.45);
-  --chip-gold: #f6c542;
-  --chip-slate: #233746;
-  --chip-emerald: #2ea285;
-  --chip-ruby: #c24747;
+  --felt-base: #0f4a35;
+  --felt-grid: rgba(255, 255, 255, 0.05);
+  --felt-border: #073626;
+  --chip-gold: #d9a21b;
+  --chip-slate: #263241;
+  --chip-emerald: #0f766e;
+  --chip-ruby: #b4232c;
 
   --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-display: 'Poppins', 'Inter', sans-serif;
@@ -53,27 +53,27 @@
   --line-height-tight: 1.2;
   --line-height-normal: 1.55;
 
-  --radius: 18px;
-  --shadow-table: 0 32px 45px -40px rgba(12, 64, 44, 0.8);
-  --shadow-ambient: 0 18px 30px -20px rgba(24, 32, 48, 0.35);
+  --radius: 8px;
+  --shadow-table: 0 22px 48px -34px rgba(6, 32, 23, 0.7);
+  --shadow-ambient: 0 14px 28px -24px rgba(24, 32, 48, 0.45);
 
   --transition-snappy: 200ms cubic-bezier(0.33, 1, 0.68, 1);
 }
 
 .dark {
-  --background: #0c1016;
+  --background: #0d1117;
   --foreground: #e9ecf5;
-  --muted: rgba(20, 31, 45, 0.85);
+  --muted: #18202b;
   --muted-foreground: #a1a9c1;
-  --card: rgba(10, 17, 26, 0.82);
+  --card: #111823;
   --card-foreground: #f2f5ff;
-  --popover: rgba(10, 17, 26, 0.95);
+  --popover: #111823;
   --popover-foreground: #f2f5ff;
-  --primary: #47c7a4;
+  --primary: #38b99f;
   --primary-foreground: #06231a;
   --secondary: #1a2733;
   --secondary-foreground: #dbe3f5;
-  --accent: #f6c542;
+  --accent: #e4b538;
   --accent-foreground: #1a1f29;
   --destructive: #ff7269;
   --destructive-foreground: #1b090a;
@@ -111,7 +111,7 @@
   --line-height-tight: 1.25;
   --line-height-normal: 1.6;
 
-  --radius: 20px;
+  --radius: 8px;
   --shadow-table: 0 36px 48px -38px rgba(5, 28, 20, 0.9);
   --shadow-ambient: 0 24px 42px -28px rgba(8, 14, 25, 0.8);
 
@@ -148,22 +148,45 @@
 }
 
 @layer components {
+  .app-backdrop {
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.45), transparent 26rem),
+      var(--background);
+  }
+
   .chip-stack {
-    background: linear-gradient(135deg, var(--chip-gold), var(--chip-emerald));
-    box-shadow: 0 6px 12px -8px var(--chip-slate);
+    background: color-mix(in srgb, var(--chip-gold) 86%, white);
+    border: 1px solid color-mix(in srgb, var(--chip-gold) 58%, black);
+    box-shadow: 0 6px 14px -12px var(--chip-slate);
     border-radius: 9999px;
-    color: var(--secondary-foreground);
+    color: #211806;
   }
 
   .glass-panel {
-    backdrop-filter: blur(18px);
-    background: linear-gradient(
-      135deg,
-      rgba(255, 255, 255, 0.24),
-      rgba(255, 255, 255, 0.08)
-    );
+    background: color-mix(in srgb, var(--card) 92%, transparent);
     border-radius: var(--radius);
     box-shadow: var(--shadow-ambient);
+  }
+
+  .table-panel {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-ambient);
+  }
+
+  .brand-mark {
+    background:
+      linear-gradient(145deg, color-mix(in srgb, var(--primary) 92%, white), var(--primary));
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.28), 0 14px 24px -18px var(--primary);
+  }
+
+  .icon-tile {
+    display: inline-grid;
+    place-items: center;
+    border-radius: var(--radius);
+    background: color-mix(in srgb, var(--primary) 10%, transparent);
+    color: var(--primary);
   }
 }
 
@@ -171,7 +194,7 @@
   .felt-surface {
     position: relative;
     background: var(--felt-base);
-    border-radius: calc(var(--radius) + 12px);
+    border-radius: calc(var(--radius) + 4px);
     box-shadow: var(--shadow-table);
     overflow: hidden;
   }
@@ -185,11 +208,7 @@
         rgba(255, 255, 255, 0.08),
         rgba(0, 0, 0, 0)
       ),
-      radial-gradient(
-        circle at 20% 20%,
-        rgba(255, 255, 255, 0.08),
-        rgba(0, 0, 0, 0)
-      );
+      repeating-linear-gradient(45deg, transparent 0 12px, var(--felt-grid) 12px 13px);
     opacity: 0.85;
   }
 
@@ -197,13 +216,9 @@
     content: '';
     position: absolute;
     inset: 0;
-    background-image: linear-gradient(
-      90deg,
-      transparent,
-      var(--felt-grid) 40%,
-      transparent 80%
-    );
-    mask-image: radial-gradient(circle at center, rgba(0, 0, 0, 0.6), transparent 70%);
+    border: 1px solid rgba(255,255,255,0.16);
+    inset: 1rem;
+    border-radius: inherit;
     pointer-events: none;
   }
 
@@ -215,7 +230,7 @@
   .heading-subtle {
     font-family: var(--font-display);
     font-weight: var(--heading-weight);
-    letter-spacing: 0.02em;
+    letter-spacing: 0;
     text-transform: uppercase;
   }
 

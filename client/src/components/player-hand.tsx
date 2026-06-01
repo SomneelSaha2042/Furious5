@@ -1,11 +1,16 @@
 import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { AlertTriangle, Sparkles, SquareStack } from 'lucide-react';
 import { Card } from './card';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { Card as CardType, GameState, Drop } from '@shared/game-types';
 import { canCall, sumPoints, validateDrop } from '@shared/game-engine';
+import {
+  CallFiveIcon,
+  DeckIcon,
+  DropCardIcon,
+  PlayerHandIcon,
+} from '@/components/icons/Furious5Icons';
 
 interface PlayerHandProps {
   gameState: GameState;
@@ -110,7 +115,7 @@ export function PlayerHand({ gameState, playerId, onCall, onDropCards, onDrawFro
 
   return (
     <motion.section
-      className="surface-soft glass-panel rounded-3xl p-4 sm:p-6 flex flex-col gap-6"
+      className="table-panel flex flex-col gap-6 p-4 sm:p-6"
       layout
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
@@ -123,6 +128,7 @@ export function PlayerHand({ gameState, playerId, onCall, onDropCards, onDrawFro
           </div>
           <div>
             <p className="text-base font-semibold" data-testid="player-name">
+              <PlayerHandIcon className="mr-1.5 inline h-4 w-4 text-primary align-[-0.15em]" />
               {currentPlayer.name} (You)
             </p>
             <p className="text-sm text-muted-foreground">
@@ -137,7 +143,7 @@ export function PlayerHand({ gameState, playerId, onCall, onDropCards, onDrawFro
         </div>
         <div className="text-xs sm:text-sm text-muted-foreground">
           {cardIsInteractive
-            ? 'Tap cards to build a drop. Swipe sideways to scan your hand.'
+            ? 'Tap cards to build a drop. Scroll sideways to scan your hand.'
             : isMyTurn
             ? 'Complete your draw before taking more actions.'
             : 'Waiting for other players. Your hand is locked.'}
@@ -167,7 +173,7 @@ export function PlayerHand({ gameState, playerId, onCall, onDropCards, onDrawFro
                   onClick={() => handleCardClick(card)}
                   className={cn(
                     cardIsInteractive ? 'cursor-pointer' : 'cursor-not-allowed opacity-75',
-                    'rounded-2xl border-2 border-transparent hover:border-accent/70'
+                    'border-2 border-transparent hover:border-accent/70'
                   )}
                 />
               </motion.div>
@@ -185,8 +191,8 @@ export function PlayerHand({ gameState, playerId, onCall, onDropCards, onDrawFro
           data-testid="button-call"
           className="flex items-center justify-center gap-2 py-3"
         >
-          <AlertTriangle className="h-5 w-5" />
-          <span>{canCallNow ? `Call (${handTotal})` : `Call (${handTotal} ≥ 5)`}</span>
+          <CallFiveIcon className="h-5 w-5" />
+          <span>{canCallNow ? `Call (${handTotal})` : `Call (${handTotal} >= 5)`}</span>
         </Button>
 
         <Button
@@ -196,7 +202,7 @@ export function PlayerHand({ gameState, playerId, onCall, onDropCards, onDrawFro
           data-testid="button-drop"
           className="flex items-center justify-center gap-2 py-3"
         >
-          <Sparkles className="h-5 w-5" />
+          <DropCardIcon className="h-5 w-5" />
           <span>
             {!isMyTurn
               ? 'Wait for turn'
@@ -214,7 +220,7 @@ export function PlayerHand({ gameState, playerId, onCall, onDropCards, onDrawFro
           data-testid="button-draw-deck"
           className="flex items-center justify-center gap-2 py-3"
         >
-          <SquareStack className="h-5 w-5" />
+          <DeckIcon className="h-5 w-5" />
           <span>Draw from Deck</span>
         </Button>
       </div>

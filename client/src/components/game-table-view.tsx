@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Users, Timer, Layers, Sparkles, SquareStack, ArrowDownToLine } from 'lucide-react';
+import { Users, Sparkles } from 'lucide-react';
 import { Card } from './card';
 import { PlayerHand } from './player-hand';
 import { TurnTimer } from './turn-timer';
@@ -9,6 +9,12 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { GameState, Player, Card as CardType } from '@shared/game-types';
 import { canDrawFromTable, sumPoints, sortCardsForDisplay } from '@shared/game-engine';
+import {
+  DeckIcon,
+  DrawCardIcon,
+  DropCardIcon,
+  TimerIcon,
+} from '@/components/icons/Furious5Icons';
 
 interface GameTableViewProps {
   gameState: GameState;
@@ -35,10 +41,10 @@ function formatCardLabel(card: CardType) {
   })();
 
   const suit = {
-    H: '♥',
-    D: '♦',
-    C: '♣',
-    S: '♠',
+    H: '\u2665',
+    D: '\u2666',
+    C: '\u2663',
+    S: '\u2660',
   }[card.s];
 
   return `${rank}${suit}`;
@@ -95,7 +101,7 @@ export function GameTableView({
     <div className="flex flex-col gap-6 lg:gap-8">
       <header className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.2fr)_auto_minmax(0,.8fr)] items-stretch">
         <motion.div
-          className="glass-panel flex flex-col gap-3 p-4"
+          className="table-panel flex flex-col gap-3 p-4"
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.18 }}
@@ -106,7 +112,7 @@ export function GameTableView({
               <span className="text-muted-foreground">Active Turn</span>
             </div>
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <Timer className="h-4 w-4" />
+              <TimerIcon className="h-4 w-4" />
               <span>{gameState.turnStage === 'dropped' ? 'Draw phase' : 'Drop phase'}</span>
             </div>
           </div>
@@ -127,7 +133,7 @@ export function GameTableView({
         </motion.div>
 
         <motion.div
-          className="glass-panel flex items-center justify-center p-2"
+          className="table-panel flex items-center justify-center p-2"
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1, duration: 0.2 }}
@@ -141,13 +147,13 @@ export function GameTableView({
         </motion.div>
 
         <motion.div
-          className="glass-panel flex flex-col justify-between gap-2 p-4"
+          className="table-panel flex flex-col justify-between gap-2 p-4"
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.12, duration: 0.2 }}
         >
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Layers className="h-4 w-4" />
+            <DeckIcon className="h-4 w-4" />
             <span>Deck remaining</span>
           </div>
           <div className="flex items-end justify-between">
@@ -172,7 +178,7 @@ export function GameTableView({
                     <motion.div
                       key={player.id}
                       className={cn(
-                        'glass-panel min-w-[220px] flex-shrink-0 rounded-2xl border border-white/10 p-3',
+                        'min-w-[220px] flex-shrink-0 rounded-lg border border-white/10 bg-black/16 p-3 shadow-lg',
                         isCurrentTurn && 'ring-2 ring-accent shadow-lg'
                       )}
                       initial={{ opacity: 0, y: 12 }}
@@ -188,7 +194,7 @@ export function GameTableView({
             </div>
 
             <TableDropPanel
-              className="rounded-3xl border border-white/10 p-4 sm:p-6"
+              className="rounded-lg border border-white/10 p-4 sm:p-6"
               tableDrop={gameState.tableDrop}
               dropKindLabel={dropKindLabel}
               formatCardLabel={formatCardLabel}
@@ -205,7 +211,7 @@ export function GameTableView({
                 <motion.div
                   key={player.id}
                   className={cn(
-                    'glass-panel p-4 rounded-2xl border border-white/10',
+                    'rounded-lg border border-white/10 bg-black/16 p-4 shadow-lg',
                     currentTurnPlayer?.id === player.id && 'ring-2 ring-accent shadow-lg'
                   )}
                   initial={{ opacity: 0, x: -18 }}
@@ -218,7 +224,7 @@ export function GameTableView({
             </div>
 
             <TableDropPanel
-              className="rounded-3xl border border-white/10 p-4 sm:p-6"
+              className="rounded-lg border border-white/10 p-4 sm:p-6"
               tableDrop={gameState.tableDrop}
               dropKindLabel={dropKindLabel}
               formatCardLabel={formatCardLabel}
@@ -233,7 +239,7 @@ export function GameTableView({
                 <motion.div
                   key={player.id}
                   className={cn(
-                    'glass-panel p-4 rounded-2xl border border-white/10',
+                    'rounded-lg border border-white/10 bg-black/16 p-4 shadow-lg',
                     currentTurnPlayer?.id === player.id && 'ring-2 ring-accent shadow-lg'
                   )}
                   initial={{ opacity: 0, x: 18 }}
@@ -252,7 +258,7 @@ export function GameTableView({
 
           <div className="flex items-center gap-3 text-xs text-muted-foreground">
             <Sparkles className="h-4 w-4" />
-            <span>Drag across player panels to reveal card counts and chips, perfect for quick table reads.</span>
+            <span>Track card counts, chip movement, and the current draw phase without leaving the table.</span>
           </div>
         </div>
       </section>
@@ -305,19 +311,19 @@ function TableDropPanel({
 }: TableDropPanelProps) {
   return (
     <motion.div
-      className={cn('surface-soft glass-panel rounded-3xl border border-white/10 p-4 sm:p-6', className)}
+      className={cn('rounded-lg border border-white/10 bg-black/18 p-4 text-white shadow-2xl sm:p-6', className)}
       initial={{ scale: 0.96, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
       transition={{ duration: 0.22 }}
     >
       <div className="mb-3 flex items-center justify-between">
         <div className="flex items-center gap-2 text-muted-foreground">
-          <SquareStack className="h-4 w-4" />
+          <DropCardIcon className="h-4 w-4" />
           <span className="heading-subtle text-xs">Table Drop</span>
         </div>
         {tableDrop && (
           <span className="text-xs text-muted-foreground">
-            {dropKindLabel(tableDrop.kind)} · {tableDrop.cards.length} card(s)
+            {dropKindLabel(tableDrop.kind)} - {tableDrop.cards.length} card(s)
           </span>
         )}
       </div>
@@ -365,7 +371,7 @@ function TableDropPanel({
                     data-testid={`button-draw-table-${originalIndex}`}
                     className="justify-start gap-2"
                   >
-                    <ArrowDownToLine className="h-4 w-4" />
+                    <DrawCardIcon className="h-4 w-4" />
                     Take {formatCardLabel(card)}
                   </Button>
                 );

@@ -2,8 +2,14 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import type { GameState } from '@shared/game-types';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Users, Copy, Check, Clock, Sparkles, Play, Wifi } from 'lucide-react';
+import { Users, Copy, Check, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import {
+  LobbyIcon,
+  RoomCodeIcon,
+  SocketLiveIcon,
+  StartGameIcon,
+} from '@/components/icons/Furious5Icons';
 
 interface LobbyViewProps {
   gameState: GameState;
@@ -21,7 +27,7 @@ export function LobbyView({ gameState, playerId, onStartGame, onToggleReady }: L
 
   const readyDescriptor =
     readyCount < gameState.players.length
-      ? `Waiting for players to ready up… (${readyCount}/${gameState.players.length})`
+      ? `Waiting for players to ready up... (${readyCount}/${gameState.players.length})`
       : 'All players ready! Game can start.';
 
   return (
@@ -31,18 +37,18 @@ export function LobbyView({ gameState, playerId, onStartGame, onToggleReady }: L
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.24 }}
     >
-      <section className="surface-soft glass-panel p-6 sm:p-8">
+      <section className="table-panel p-5 sm:p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-3xl font-semibold" data-testid="lobby-title">
               Game Lobby
             </h2>
             <p className="text-sm text-muted-foreground flex items-center gap-2">
-              <Clock className="h-4 w-4" />
+              <LobbyIcon className="h-4 w-4" />
               {readyDescriptor}
             </p>
           </div>
-          <div className="flex items-center gap-3 rounded-full bg-primary/10 px-4 py-2 text-xs font-medium text-primary">
+          <div className="flex items-center gap-3 rounded-md border border-primary/20 bg-primary/10 px-3 py-2 text-xs font-medium text-primary">
             <Users className="h-4 w-4" />
             <span>
               {gameState.players.length}
@@ -69,7 +75,7 @@ export function LobbyView({ gameState, playerId, onStartGame, onToggleReady }: L
                     exit={{ opacity: 0, y: -10 }}
                     transition={{ duration: 0.15 }}
                     className={cn(
-                      'flex items-center justify-between rounded-2xl border border-border/40 bg-muted/60 px-4 py-3 backdrop-blur-sm',
+                      'flex items-center justify-between rounded-lg border border-border bg-muted/50 px-4 py-3',
                       isSelf && 'ring-2 ring-primary/70 bg-primary/10'
                     )}
                   >
@@ -80,10 +86,10 @@ export function LobbyView({ gameState, playerId, onStartGame, onToggleReady }: L
                       <div>
                         <p className="font-medium" data-testid={`player-name-${index}`}>
                           {player.name}
-                          {isSelf && <span className="text-xs text-muted-foreground"> · you</span>}
+                          {isSelf && <span className="text-xs text-muted-foreground"> - you</span>}
                         </p>
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <Wifi className={cn('h-3 w-3', player.connected ? 'text-primary' : 'text-destructive')} />
+                          <SocketLiveIcon className={cn('h-3 w-3', player.connected ? 'text-primary' : 'text-destructive')} />
                           <span>{player.connected ? 'Online' : 'Offline'}</span>
                         </div>
                       </div>
@@ -103,8 +109,9 @@ export function LobbyView({ gameState, playerId, onStartGame, onToggleReady }: L
           </div>
         </div>
 
-        <div className="mt-8 rounded-3xl border border-primary/25 bg-primary/10 p-6 text-center">
+        <div className="mt-8 rounded-lg border border-primary/25 bg-primary/10 p-6 text-center">
           <div className="text-2xl font-mono font-semibold text-primary mb-1" data-testid="room-code-display">
+            <RoomCodeIcon className="mr-2 inline h-5 w-5 align-[-0.2em]" />
             {gameState.roomCode}
           </div>
           <p className="text-sm text-muted-foreground">
@@ -145,7 +152,7 @@ export function LobbyView({ gameState, playerId, onStartGame, onToggleReady }: L
             data-testid="button-start-game"
             variant={canStart ? 'default' : 'secondary'}
           >
-            <Play className="h-4 w-4" />
+            <StartGameIcon className="h-4 w-4" />
             {canStart
               ? 'Start game'
               : gameState.players.length < 2
@@ -154,7 +161,7 @@ export function LobbyView({ gameState, playerId, onStartGame, onToggleReady }: L
           </Button>
         </div>
 
-        <div className="mt-8 rounded-2xl border border-border/50 bg-background/80 p-5">
+        <div className="mt-8 rounded-lg border border-border bg-background/80 p-5">
           <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
             <Sparkles className="h-4 w-4 text-accent" />
             Quick rules
@@ -163,7 +170,7 @@ export function LobbyView({ gameState, playerId, onStartGame, onToggleReady }: L
             <li>Start with five cards and aim to get below five points.</li>
             <li>Drop singles, pairs, trips, quads, or straights (3+).</li>
             <li>Call when your total is under five to end the round.</li>
-            <li>A=1 · 2-10 face value · J=11 · Q=12 · K=13.</li>
+            <li>A=1, 2-10 face value, J=11, Q=12, K=13.</li>
           </ul>
         </div>
       </section>

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Timer as TimerIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { TimerIcon } from '@/components/icons/Furious5Icons';
 
 interface TurnTimerProps {
   isActive: boolean;
@@ -52,7 +52,7 @@ export function TurnTimer({ isActive, duration = 30, onTimeout }: TurnTimerProps
           exit={{ opacity: 0, y: 24 }}
           transition={{ type: 'spring', stiffness: 320, damping: 28 }}
           className={cn(
-            'fixed bottom-4 left-4 z-50 flex items-center gap-3 rounded-2xl border border-border/70 bg-card/95 px-4 py-3 shadow-lg backdrop-blur',
+            'fixed bottom-4 left-4 z-50 flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3 shadow-lg',
             urgency && 'border-destructive/60'
           )}
         >
