@@ -1,16 +1,15 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
+import { metrics } from "./metrics";
 import { storage } from "./storage";
-import type { GameState } from "@shared/game-types";
+import type { Card, GameState } from "@shared/game-types";
 import {
   JoinRoomSchema,
   CreateRoomSchema,
   DropCardsSchema,
   DrawFromTableSchema,
-  GameStateSchema,
-  ErrorSchema,
-  type DropCardsData
+  type DropCardsData,
 } from "@shared/game-types";
 import {
   createGame,
@@ -21,7 +20,7 @@ import {
   drawFromTable,
   settleOnCall,
   checkInvariants,
-  togglePlayerReady
+  togglePlayerReady,
 } from "@shared/game-engine";
 
 interface ExtendedWebSocket extends WebSocket {
@@ -37,94 +36,126 @@ interface SocketMessage {
   data: any;
 }
 
+function formatCard(card: Card): string {
+  const rank = card.r === 1 ? "A" : card.r === 11 ? "J" : card.r === 12 ? "Q" : card.r === 13 ? "K" : card.r.toString();
+  const suit = card.s === "H" ? "H" : card.s === "D" ? "D" : card.s === "C" ? "C" : "S";
+  return `${rank}${suit}`;
+}
+
+function errorCodeForJoin(error: Error): string {
+  if (error.message === "Room not found") return "ROOM_NOT_FOUND";
+  if (error.message === "Game already in progress") return "GAME_IN_PROGRESS";
+  if (error.message === "A player with that name is already in the room") return "PLAYER_ALREADY_EXISTS";
+  return "JOIN_FAILED";
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
-  
-  // WebSocket server for real-time game communication
-  const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
-  
-  // Track active connections by room
+  const wss = new WebSocketServer({ server: httpServer, path: "/ws" });
   const roomConnections = new Map<string, Set<ExtendedWebSocket>>();
-  
+
   function generateRoomCode(): string {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let result = '';
+    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    let result = "";
     for (let i = 0; i < 6; i++) {
       result += chars.charAt(Math.floor(Math.random() * chars.length));
     }
     return `FF-${result}`;
   }
-  
+
+  function updateActiveSocketMetric(): void {
+    metrics.setActiveSockets(wss.clients.size);
+  }
+
   function broadcastToRoom(roomCode: string, message: any, excludeSocket?: ExtendedWebSocket): void {
     const connections = roomConnections.get(roomCode);
     if (!connections) return;
-    
+
     const messageStr = JSON.stringify(message);
     for (const socket of Array.from(connections)) {
       if (socket !== excludeSocket && socket.readyState === WebSocket.OPEN) {
         socket.send(messageStr);
+        metrics.incrementMessagesSent();
       }
     }
   }
-  
+
   function sendToSocket(socket: ExtendedWebSocket, message: any): void {
     if (socket.readyState === WebSocket.OPEN) {
       socket.send(JSON.stringify(message));
+      metrics.incrementMessagesSent();
     }
   }
-  
+
   function sendError(socket: ExtendedWebSocket, code: string, message: string): void {
     sendToSocket(socket, {
-      type: 'error',
-      data: { code, message }
+      type: "error",
+      data: { code, message },
     });
   }
-  
-  async function updatePlayerConnection(roomCode: string, playerId: string, connected: boolean): Promise<void> {
+
+  function addSocketToRoom(socket: ExtendedWebSocket, roomCode: string): void {
+    if (!roomConnections.has(roomCode)) {
+      roomConnections.set(roomCode, new Set());
+    }
+    roomConnections.get(roomCode)!.add(socket);
+  }
+
+  async function updatePlayerConnection(
+    roomCode: string,
+    playerId: string,
+    connected: boolean,
+  ): Promise<GameState | undefined> {
     try {
-      const gameState = await storage.getRoom(roomCode);
-      if (!gameState) return;
-      
-      const playerIndex = gameState.players.findIndex(p => p.id === playerId);
-      if (playerIndex === -1) return;
-      
-      const updatedPlayers = [...gameState.players];
-      updatedPlayers[playerIndex] = {
-        ...updatedPlayers[playerIndex],
-        connected
-      };
-      
-      const updatedState: GameState = {
-        ...gameState,
-        players: updatedPlayers,
-        version: gameState.version + 1
-      };
-      
-      await storage.updateRoom(roomCode, updatedState);
-      
-      broadcastToRoom(roomCode, {
-        type: 'state:update',
-        data: updatedState
+      const updatedState = await storage.mutateRoom(roomCode, async (gameState) => {
+        const playerIndex = gameState.players.findIndex((player) => player.id === playerId);
+        if (playerIndex === -1) {
+          return gameState;
+        }
+
+        const currentPlayer = gameState.players[playerIndex];
+        if (currentPlayer.connected === connected) {
+          return gameState;
+        }
+
+        const updatedPlayers = [...gameState.players];
+        updatedPlayers[playerIndex] = {
+          ...currentPlayer,
+          connected,
+        };
+
+        return {
+          ...gameState,
+          players: updatedPlayers,
+          version: gameState.version + 1,
+        };
       });
-      
+
+      broadcastToRoom(roomCode, {
+        type: "state:update",
+        data: updatedState,
+      });
+
+      return updatedState;
     } catch (error) {
-      console.error('Error updating player connection:', error);
+      if ((error as Error).message !== "Room not found") {
+        console.error("Error updating player connection:", error);
+      }
+      return undefined;
     }
   }
 
   function scheduleDisconnect(socket: ExtendedWebSocket): void {
-    // Clear any existing timer
     if (socket.disconnectTimer) {
       clearTimeout(socket.disconnectTimer);
     }
-    
-    // Set a 2-minute grace period before marking as disconnected
+
     socket.disconnectTimer = setTimeout(async () => {
       if (socket.roomCode && socket.playerId) {
         console.log(`Player ${socket.playerId} marked as disconnected after grace period`);
         await updatePlayerConnection(socket.roomCode, socket.playerId, false);
       }
-    }, 120000); // 120 second (2 minute) grace period
+    }, 120000);
   }
 
   function cancelDisconnect(socket: ExtendedWebSocket): void {
@@ -133,607 +164,506 @@ export async function registerRoutes(app: Express): Promise<Server> {
       socket.disconnectTimer = undefined;
     }
   }
-  
-  wss.on('connection', (socket: ExtendedWebSocket) => {
-    console.log('New WebSocket connection');
-    
-    // Initialize ping tracking
+
+  wss.on("connection", (socket: ExtendedWebSocket) => {
+    console.log("New WebSocket connection");
+    updateActiveSocketMetric();
+
     socket.lastPing = Date.now();
-    
-    // Handle ping/pong for connection health
-    socket.on('pong', () => {
+
+    socket.on("pong", () => {
       socket.lastPing = Date.now();
       cancelDisconnect(socket);
     });
-    
-    socket.on('message', async (data) => {
+
+    socket.on("message", async (data) => {
       try {
         const message: SocketMessage = JSON.parse(data.toString());
-        
-        // Update last activity timestamp for any message
+        metrics.incrementMessagesReceived();
+
         socket.lastPing = Date.now();
         cancelDisconnect(socket);
-        
+
         switch (message.type) {
-          case 'ping': {
-            // Respond to ping with pong
-            sendToSocket(socket, { type: 'pong', data: {} });
+          case "ping": {
+            sendToSocket(socket, { type: "pong", data: {} });
             break;
           }
-          case 'room:create': {
+
+          case "room:create": {
             const parsed = CreateRoomSchema.parse(message.data);
             const roomCode = generateRoomCode();
             const playerId = `player_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-            
+
             console.log(`Creating room ${roomCode} for player ${parsed.playerName} (${playerId})`);
-            
+
             const gameState = createGame(roomCode, parsed.playerName, playerId);
             await storage.createRoom(gameState);
-            
+            metrics.incrementRoomsCreated();
+
             socket.playerId = playerId;
             socket.roomCode = roomCode;
             socket.playerName = parsed.playerName;
-            
-            // Add socket to room connections
-            if (!roomConnections.has(roomCode)) {
-              roomConnections.set(roomCode, new Set());
-            }
-            roomConnections.get(roomCode)!.add(socket);
-            
-            console.log(`Sending room:created event for ${roomCode}`);
+            addSocketToRoom(socket, roomCode);
+
             sendToSocket(socket, {
-              type: 'room:created',
-              data: { roomCode, playerId }
+              type: "room:created",
+              data: { roomCode, playerId },
             });
-            
-            console.log(`Sending initial state update for ${roomCode}`);
+
             sendToSocket(socket, {
-              type: 'state:update',
-              data: gameState
+              type: "state:update",
+              data: gameState,
             });
-            
+
             break;
           }
-          
-          case 'room:join': {
+
+          case "room:join": {
             const parsed = JoinRoomSchema.parse(message.data);
-            console.log(`Player attempting to join room: ${parsed.roomCode} as ${parsed.playerName}`);
-            
-            const gameState = await storage.getRoom(parsed.roomCode);
-            
-            if (!gameState) {
-              console.log(`Room not found: ${parsed.roomCode}`);
-              sendError(socket, 'ROOM_NOT_FOUND', 'Room not found');
-              break;
-            }
-            
-            if (gameState.phase !== 'lobby') {
-              console.log(`Game already in progress in room: ${parsed.roomCode}`);
-              sendError(socket, 'GAME_IN_PROGRESS', 'Game already in progress');
-              break;
-            }
-            
-            // Check if player is already in this room (prevent duplicate joins)
-            if (gameState.players.some(p => p.name === parsed.playerName)) {
-              console.log(`Player ${parsed.playerName} already in room ${parsed.roomCode}`);
-              sendError(socket, 'PLAYER_ALREADY_EXISTS', 'A player with that name is already in the room');
-              break;
-            }
-            
             const playerId = `player_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-            
+
             try {
-              const updatedState = joinGame(gameState, parsed.playerName, playerId);
-              await storage.updateRoom(parsed.roomCode, updatedState);
-              
+              const updatedState = await storage.mutateRoom(parsed.roomCode, async (gameState) => {
+                if (gameState.phase !== "lobby") {
+                  throw new Error("Game already in progress");
+                }
+                if (gameState.players.some((player) => player.name === parsed.playerName)) {
+                  throw new Error("A player with that name is already in the room");
+                }
+                return joinGame(gameState, parsed.playerName, playerId);
+              });
+
               socket.playerId = playerId;
               socket.roomCode = parsed.roomCode;
               socket.playerName = parsed.playerName;
-              
-              // Add socket to room connections
-              if (!roomConnections.has(parsed.roomCode)) {
-                roomConnections.set(parsed.roomCode, new Set());
-              }
-              roomConnections.get(parsed.roomCode)!.add(socket);
-              
-              console.log(`Player ${parsed.playerName} successfully joined room ${parsed.roomCode}`);
-              
+              addSocketToRoom(socket, parsed.roomCode);
+
               sendToSocket(socket, {
-                type: 'room:joined',
-                data: { roomCode: parsed.roomCode, playerId }
+                type: "room:joined",
+                data: { roomCode: parsed.roomCode, playerId },
               });
-              
-              // Broadcast updated state to all players in room
+
               broadcastToRoom(parsed.roomCode, {
-                type: 'state:update',
-                data: updatedState
+                type: "state:update",
+                data: updatedState,
               });
-              
             } catch (error) {
-              console.log(`Failed to join room: ${(error as Error).message}`);
-              sendError(socket, 'JOIN_FAILED', (error as Error).message);
+              const err = error as Error;
+              sendError(socket, errorCodeForJoin(err), err.message);
             }
-            
+
             break;
           }
-          
-          case 'player:ready': {
+
+          case "player:ready": {
             if (!socket.roomCode || !socket.playerId) {
-              sendError(socket, 'NOT_IN_GAME', 'Not in a game');
+              sendError(socket, "NOT_IN_GAME", "Not in a game");
               break;
             }
-            
-            const gameState = await storage.getRoom(socket.roomCode);
-            if (!gameState) {
-              sendError(socket, 'ROOM_NOT_FOUND', 'Room not found');
-              break;
-            }
-            
+
             try {
-              const updatedState = togglePlayerReady(gameState, socket.playerId);
-              checkInvariants(updatedState);
-              await storage.updateRoom(socket.roomCode, updatedState);
-              
-              const player = updatedState.players.find(p => p.id === socket.playerId);
+              const updatedState = await storage.mutateRoom(socket.roomCode, async (gameState) => {
+                const next = togglePlayerReady(gameState, socket.playerId!);
+                checkInvariants(next);
+                return next;
+              });
+
+              const player = updatedState.players.find((p) => p.id === socket.playerId);
               broadcastToRoom(socket.roomCode, {
-                type: 'notification',
+                type: "notification",
                 data: {
-                  message: `${player?.name || 'Player'} is ${player?.ready ? 'ready' : 'not ready'}`,
-                  type: 'info'
-                }
+                  message: `${player?.name || "Player"} is ${player?.ready ? "ready" : "not ready"}`,
+                  type: "info",
+                },
               });
-              
+
               broadcastToRoom(socket.roomCode, {
-                type: 'state:update',
-                data: updatedState
+                type: "state:update",
+                data: updatedState,
               });
-              
             } catch (error) {
-              sendError(socket, 'READY_FAILED', (error as Error).message);
+              sendError(socket, "READY_FAILED", (error as Error).message);
             }
-            
+
             break;
           }
-          
-          case 'game:start': {
+
+          case "game:start": {
             if (!socket.roomCode) {
-              sendError(socket, 'NOT_IN_ROOM', 'Not in a room');
+              sendError(socket, "NOT_IN_ROOM", "Not in a room");
               break;
             }
-            
-            const gameState = await storage.getRoom(socket.roomCode);
-            if (!gameState) {
-              sendError(socket, 'ROOM_NOT_FOUND', 'Room not found');
-              break;
-            }
-            
+
             try {
-              const updatedState = startRound(gameState);
-              checkInvariants(updatedState);
-              await storage.updateRoom(socket.roomCode, updatedState);
-              
-              broadcastToRoom(socket.roomCode, {
-                type: 'state:update',
-                data: updatedState
+              const updatedState = await storage.mutateRoom(socket.roomCode, async (gameState) => {
+                const next = startRound(gameState);
+                checkInvariants(next);
+                return next;
               });
-              
+
+              broadcastToRoom(socket.roomCode, {
+                type: "state:update",
+                data: updatedState,
+              });
             } catch (error) {
-              sendError(socket, 'START_FAILED', (error as Error).message);
+              sendError(socket, "START_FAILED", (error as Error).message);
             }
-            
+
             break;
           }
-          
-          case 'turn:call': {
+
+          case "turn:call": {
             if (!socket.roomCode || !socket.playerId) {
-              sendError(socket, 'NOT_IN_GAME', 'Not in a game');
+              sendError(socket, "NOT_IN_GAME", "Not in a game");
               break;
             }
-            
-            const gameState = await storage.getRoom(socket.roomCode);
-            if (!gameState) {
-              sendError(socket, 'ROOM_NOT_FOUND', 'Room not found');
-              break;
-            }
-            
+
             try {
-              const updatedState = settleOnCall(gameState, socket.playerId);
-              checkInvariants(updatedState);
-              await storage.updateRoom(socket.roomCode, updatedState);
-              
-              broadcastToRoom(socket.roomCode, {
-                type: 'state:update',
-                data: updatedState
+              const updatedState = await storage.mutateRoom(socket.roomCode, async (gameState) => {
+                const next = settleOnCall(gameState, socket.playerId!);
+                checkInvariants(next);
+                return next;
               });
-              
+
+              broadcastToRoom(socket.roomCode, {
+                type: "state:update",
+                data: updatedState,
+              });
             } catch (error) {
-              sendError(socket, 'CALL_FAILED', (error as Error).message);
+              sendError(socket, "CALL_FAILED", (error as Error).message);
             }
-            
+
             break;
           }
-          
-          case 'turn:drop': {
+
+          case "turn:drop": {
             if (!socket.roomCode || !socket.playerId) {
-              sendError(socket, 'NOT_IN_GAME', 'Not in a game');
+              sendError(socket, "NOT_IN_GAME", "Not in a game");
               break;
             }
-            
+
             const parsed: DropCardsData = DropCardsSchema.parse(message.data);
-            const gameState = await storage.getRoom(socket.roomCode);
-            
-            if (!gameState) {
-              sendError(socket, 'ROOM_NOT_FOUND', 'Room not found');
-              break;
-            }
-            
+
             try {
-              const updatedState = applyDrop(gameState, socket.playerId, parsed.drop as any);
-              checkInvariants(updatedState);
-              await storage.updateRoom(socket.roomCode, updatedState);
-              
-              broadcastToRoom(socket.roomCode, {
-                type: 'state:update',
-                data: updatedState
+              const updatedState = await storage.mutateRoom(socket.roomCode, async (gameState) => {
+                const next = applyDrop(gameState, socket.playerId!, parsed.drop as any);
+                checkInvariants(next);
+                return next;
               });
-              
+
+              broadcastToRoom(socket.roomCode, {
+                type: "state:update",
+                data: updatedState,
+              });
             } catch (error) {
-              sendError(socket, 'DROP_FAILED', (error as Error).message);
+              sendError(socket, "DROP_FAILED", (error as Error).message);
             }
-            
+
             break;
           }
-          
-          case 'turn:drawDeck': {
+
+          case "turn:drawDeck": {
             if (!socket.roomCode || !socket.playerId) {
-              sendError(socket, 'NOT_IN_GAME', 'Not in a game');
+              sendError(socket, "NOT_IN_GAME", "Not in a game");
               break;
             }
-            
-            const gameState = await storage.getRoom(socket.roomCode);
-            if (!gameState) {
-              sendError(socket, 'ROOM_NOT_FOUND', 'Room not found');
-              break;
-            }
-            
+
+            let playerName = "Player";
+
             try {
-              const player = gameState.players.find(p => p.id === socket.playerId);
-              const updatedState = drawFromDeck(gameState, socket.playerId);
-              checkInvariants(updatedState);
-              await storage.updateRoom(socket.roomCode, updatedState);
-              
-              // Send notification to all players
+              const updatedState = await storage.mutateRoom(socket.roomCode, async (gameState) => {
+                const player = gameState.players.find((p) => p.id === socket.playerId);
+                playerName = player?.name || "Player";
+                const next = drawFromDeck(gameState, socket.playerId!);
+                checkInvariants(next);
+                return next;
+              });
+
               broadcastToRoom(socket.roomCode, {
-                type: 'notification',
+                type: "notification",
                 data: {
-                  message: `${player?.name || 'Player'} drew from deck`,
-                  type: 'info'
-                }
+                  message: `${playerName} drew from deck`,
+                  type: "info",
+                },
               });
-              
+
               broadcastToRoom(socket.roomCode, {
-                type: 'state:update',
-                data: updatedState
+                type: "state:update",
+                data: updatedState,
               });
-              
             } catch (error) {
-              sendError(socket, 'DRAW_FAILED', (error as Error).message);
+              sendError(socket, "DRAW_FAILED", (error as Error).message);
             }
-            
+
             break;
           }
-          
-          case 'turn:drawFromTable': {
+
+          case "turn:drawFromTable": {
             if (!socket.roomCode || !socket.playerId) {
-              sendError(socket, 'NOT_IN_GAME', 'Not in a game');
+              sendError(socket, "NOT_IN_GAME", "Not in a game");
               break;
             }
-            
+
             const parsed = DrawFromTableSchema.parse(message.data);
-            const gameState = await storage.getRoom(socket.roomCode);
-            
-            if (!gameState) {
-              sendError(socket, 'ROOM_NOT_FOUND', 'Room not found');
-              break;
-            }
-            
+            let notification: string | undefined;
+
             try {
-              const player = gameState.players.find(p => p.id === socket.playerId);
-              const cardTaken = gameState.tableDrop?.cards[parsed.cardIndex];
-              
-              const updatedState = drawFromTable(gameState, socket.playerId, parsed.cardIndex);
-              checkInvariants(updatedState);
-              await storage.updateRoom(socket.roomCode, updatedState);
-              
-              // Send notification to all players with card details
-              if (cardTaken) {
-                const cardName = cardTaken.r === 1 ? 'A' : 
-                                cardTaken.r === 11 ? 'J' : 
-                                cardTaken.r === 12 ? 'Q' : 
-                                cardTaken.r === 13 ? 'K' : 
-                                cardTaken.r.toString();
-                const suit = cardTaken.s === 'H' ? '♥' : 
-                            cardTaken.s === 'D' ? '♦' : 
-                            cardTaken.s === 'C' ? '♣' : '♠';
-                
+              const updatedState = await storage.mutateRoom(socket.roomCode, async (gameState) => {
+                const player = gameState.players.find((p) => p.id === socket.playerId);
+                const cardTaken = gameState.tableDrop?.cards[parsed.cardIndex];
+                if (cardTaken) {
+                  notification = `${player?.name || "Player"} drew ${formatCard(cardTaken)} from pile`;
+                }
+
+                const next = drawFromTable(gameState, socket.playerId!, parsed.cardIndex);
+                checkInvariants(next);
+                return next;
+              });
+
+              if (notification) {
                 broadcastToRoom(socket.roomCode, {
-                  type: 'notification',
+                  type: "notification",
                   data: {
-                    message: `${player?.name || 'Player'} drew ${cardName}${suit} from pile`,
-                    type: 'info'
-                  }
+                    message: notification,
+                    type: "info",
+                  },
                 });
               }
-              
+
               broadcastToRoom(socket.roomCode, {
-                type: 'state:update',
-                data: updatedState
+                type: "state:update",
+                data: updatedState,
               });
-              
             } catch (error) {
-              sendError(socket, 'DRAW_FAILED', (error as Error).message);
+              sendError(socket, "DRAW_FAILED", (error as Error).message);
             }
-            
+
             break;
           }
-          
-          case 'round:new': {
+
+          case "round:new": {
             if (!socket.roomCode) {
-              sendError(socket, 'NOT_IN_ROOM', 'Not in a room');
+              sendError(socket, "NOT_IN_ROOM", "Not in a room");
               break;
             }
-            
-            const gameState = await storage.getRoom(socket.roomCode);
-            if (!gameState) {
-              sendError(socket, 'ROOM_NOT_FOUND', 'Room not found');
-              break;
-            }
-            
+
             try {
-              const updatedState = startRound({
-                ...gameState,
-                phase: 'playing',
-                settlement: null,
-                roundNumber: gameState.roundNumber + 1 // Increment round number for new rounds
+              const updatedState = await storage.mutateRoom(socket.roomCode, async (gameState) => {
+                const next = startRound({
+                  ...gameState,
+                  phase: "playing",
+                  settlement: null,
+                  roundNumber: gameState.roundNumber + 1,
+                });
+                checkInvariants(next);
+                return next;
               });
-              checkInvariants(updatedState);
-              await storage.updateRoom(socket.roomCode, updatedState);
-              
+
               broadcastToRoom(socket.roomCode, {
-                type: 'state:update',
-                data: updatedState
+                type: "state:update",
+                data: updatedState,
               });
-              
             } catch (error) {
-              sendError(socket, 'NEW_ROUND_FAILED', (error as Error).message);
+              sendError(socket, "NEW_ROUND_FAILED", (error as Error).message);
             }
-            
+
             break;
           }
-          
-          case 'game:getState': {
-            // Allow getState to include roomCode and playerId for reconnections
+
+          case "game:getState": {
             const roomCode = message.data?.roomCode || socket.roomCode;
             const playerId = message.data?.playerId || socket.playerId;
-            
+
             if (!roomCode) {
-              sendError(socket, 'NOT_IN_ROOM', 'Not in a room');
+              sendError(socket, "NOT_IN_ROOM", "Not in a room");
               break;
             }
-            
-            const gameState = await storage.getRoom(roomCode);
+
+            let gameState = await storage.getRoom(roomCode);
             if (!gameState) {
-              sendError(socket, 'ROOM_NOT_FOUND', 'Room not found');
+              sendError(socket, "ROOM_NOT_FOUND", "Room not found");
               break;
             }
-            
-            // For reconnections, restore socket identity and re-add to room
+
             if (playerId && !socket.playerId) {
-              // Verify this player exists in the game
-              const player = gameState.players.find(p => p.id === playerId);
+              const player = gameState.players.find((p) => p.id === playerId);
               if (player) {
                 socket.playerId = playerId;
                 socket.roomCode = roomCode;
                 socket.playerName = player.name;
-                console.log(`Restored identity for reconnected player ${player.name} (${playerId})`);
-                
-                // Mark player as connected again
-                await updatePlayerConnection(roomCode, playerId, true);
+                const updatedState = await updatePlayerConnection(roomCode, playerId, true);
+                gameState = updatedState ?? gameState;
               }
             }
-            
-            // Re-add socket to room connections if not already there (for reconnections)
+
             if (socket.roomCode) {
-              if (!roomConnections.has(socket.roomCode)) {
-                roomConnections.set(socket.roomCode, new Set());
-              }
-              const connections = roomConnections.get(socket.roomCode)!;
-              if (!connections.has(socket)) {
-                connections.add(socket);
-                console.log(`Re-added reconnected player ${socket.playerId} to room ${socket.roomCode}`);
-              }
+              addSocketToRoom(socket, socket.roomCode);
             }
-            
-            console.log(`Sending current game state for room ${roomCode}`);
+
             sendToSocket(socket, {
-              type: 'state:update',
-              data: gameState
+              type: "state:update",
+              data: gameState,
             });
-            
+
             break;
           }
 
           default:
-            sendError(socket, 'UNKNOWN_MESSAGE', `Unknown message type: ${message.type}`);
+            sendError(socket, "UNKNOWN_MESSAGE", `Unknown message type: ${message.type}`);
         }
-        
       } catch (error) {
-        console.error('Error handling message:', error);
-        sendError(socket, 'PARSE_ERROR', 'Invalid message format');
+        console.error("Error handling message:", error);
+        sendError(socket, "PARSE_ERROR", "Invalid message format");
       }
     });
-    
-    socket.on('close', async () => {
-      console.log('WebSocket connection closed');
-      
+
+    socket.on("close", async () => {
+      console.log("WebSocket connection closed");
+      updateActiveSocketMetric();
+
       if (socket.roomCode && socket.playerId) {
-        // Remove from room connections but don't clear room completely yet
         const connections = roomConnections.get(socket.roomCode);
         if (connections) {
           connections.delete(socket);
-          // Don't delete the room entry immediately - keep it for potential reconnections
-          // Room will be cleaned up by the storage cleanup process if truly inactive
         }
-        
-        // Start grace period instead of immediately disconnecting
+
         scheduleDisconnect(socket);
       }
     });
-    
-    socket.on('error', (error) => {
-      console.error('WebSocket error:', error);
+
+    socket.on("error", (error) => {
+      console.error("WebSocket error:", error);
     });
   });
 
-  // Periodic health check for all connections
   setInterval(() => {
-    roomConnections.forEach((connections, roomCode) => {
+    updateActiveSocketMetric();
+
+    roomConnections.forEach((connections) => {
       connections.forEach((socket) => {
         if (socket.readyState === WebSocket.OPEN) {
-          // Send ping to client
           socket.ping();
-          
-          // Check if we haven't heard from this socket in too long
+
           const timeSinceLastPing = Date.now() - (socket.lastPing || 0);
-          if (timeSinceLastPing > 30000) { // 30 seconds
+          if (timeSinceLastPing > 30000) {
             console.log(`No response from ${socket.playerId} in ${timeSinceLastPing}ms, scheduling disconnect`);
             scheduleDisconnect(socket);
           }
         }
       });
     });
-  }, 10000); // Check every 10 seconds
-  
-  // HTTP endpoints as backup for room operations
-  app.post('/api/rooms', async (req, res) => {
+  }, 10000);
+
+  app.post("/api/rooms", async (req, res) => {
     try {
       const parsed = CreateRoomSchema.parse(req.body);
       const roomCode = generateRoomCode();
       const playerId = `player_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      
-      console.log(`HTTP: Creating room ${roomCode} for player ${parsed.playerName} (${playerId})`);
-      
+
       const gameState = createGame(roomCode, parsed.playerName, playerId);
       await storage.createRoom(gameState);
-      
-      res.json({ 
-        success: true, 
-        roomCode, 
+      metrics.incrementRoomsCreated();
+
+      res.json({
+        success: true,
+        roomCode,
         playerId,
-        gameState 
+        gameState,
       });
-      
     } catch (error) {
-      console.error('HTTP: Error creating room:', error);
-      res.status(400).json({ 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error' 
+      console.error("HTTP: Error creating room:", error);
+      res.status(400).json({
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
       });
     }
   });
 
-  app.post('/api/rooms/:roomCode/join', async (req, res) => {
+  app.post("/api/rooms/:roomCode/join", async (req, res) => {
     try {
       const { roomCode } = req.params;
       const parsed = JoinRoomSchema.parse(req.body);
-      
-      console.log(`HTTP: Player attempting to join room: ${roomCode} as ${parsed.playerName}`);
-      
-      const gameState = await storage.getRoom(roomCode);
-      
-      if (!gameState) {
-        console.log(`HTTP: Room not found: ${roomCode}`);
-        return res.status(404).json({ 
-          success: false, 
-          error: 'Room not found' 
-        });
-      }
-      
-      if (gameState.phase !== 'lobby') {
-        console.log(`HTTP: Game already in progress in room: ${roomCode}`);
-        return res.status(400).json({ 
-          success: false, 
-          error: 'Game already in progress' 
-        });
-      }
-      
-      // Check if player is already in this room (prevent duplicate joins)
-      if (gameState.players.some(p => p.name === parsed.playerName)) {
-        console.log(`HTTP: Player ${parsed.playerName} already in room ${roomCode}`);
-        return res.status(400).json({ 
-          success: false, 
-          error: 'A player with that name is already in the room' 
-        });
-      }
-      
       const playerId = `player_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      
-      const updatedState = joinGame(gameState, parsed.playerName, playerId);
-      await storage.updateRoom(roomCode, updatedState);
-      
-      console.log(`HTTP: Player ${parsed.playerName} successfully joined room ${roomCode}`);
-      
-      // Also broadcast to WebSocket connections if any exist
+
+      const updatedState = await storage.mutateRoom(roomCode, async (gameState) => {
+        if (gameState.phase !== "lobby") {
+          throw new Error("Game already in progress");
+        }
+        if (gameState.players.some((player) => player.name === parsed.playerName)) {
+          throw new Error("A player with that name is already in the room");
+        }
+        return joinGame(gameState, parsed.playerName, playerId);
+      });
+
       broadcastToRoom(roomCode, {
-        type: 'state:update',
-        data: updatedState
+        type: "state:update",
+        data: updatedState,
       });
-      
-      res.json({ 
-        success: true, 
+
+      res.json({
+        success: true,
         playerId,
-        gameState: updatedState 
+        gameState: updatedState,
       });
-      
     } catch (error) {
-      console.error('HTTP: Error joining room:', error);
-      res.status(400).json({ 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error' 
+      const err = error as Error;
+      const code = errorCodeForJoin(err);
+      const status = code === "ROOM_NOT_FOUND" ? 404 : 400;
+
+      console.error("HTTP: Error joining room:", error);
+      res.status(status).json({
+        success: false,
+        error: err.message,
       });
     }
   });
 
-  app.get('/api/rooms/:roomCode', async (req, res) => {
+  app.get("/api/rooms/:roomCode", async (req, res) => {
     try {
       const { roomCode } = req.params;
       const gameState = await storage.getRoom(roomCode);
-      
+
       if (!gameState) {
-        return res.status(404).json({ 
-          success: false, 
-          error: 'Room not found' 
+        return res.status(404).json({
+          success: false,
+          error: "Room not found",
         });
       }
-      
-      res.json({ 
-        success: true, 
-        gameState 
+
+      res.json({
+        success: true,
+        gameState,
       });
-      
     } catch (error) {
-      console.error('HTTP: Error getting room:', error);
-      res.status(500).json({ 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error' 
+      console.error("HTTP: Error getting room:", error);
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
       });
     }
   });
 
-  // Health check endpoint
-  app.get('/api/health', (req, res) => {
-    res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  app.get("/api/health", async (_req, res) => {
+    let activeRooms: string[] = [];
+    let status = "healthy";
+
+    try {
+      activeRooms = await storage.listActiveRooms();
+    } catch (error) {
+      status = "degraded";
+      console.error("API health storage error:", error);
+    }
+
+    const snapshot = await metrics.snapshot(activeRooms.length);
+
+    res.json({
+      status,
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV || "development",
+      ...snapshot,
+    });
   });
-  
+
   return httpServer;
 }

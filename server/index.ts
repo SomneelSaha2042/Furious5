@@ -3,7 +3,9 @@ import helmet from "helmet";
 import compression from "compression";
 import rateLimit from "express-rate-limit";
 import cors from "cors";
+import { metrics } from "./metrics";
 import { registerRoutes } from "./routes";
+import { storage } from "./storage";
 
 const app = express();
 // Default to production for safety if NODE_ENV is not set
@@ -89,12 +91,24 @@ app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: false, limit: "10mb" }));
 
 // Health check endpoint
-app.get("/health", (_req, res) => {
-  res.status(200).json({ 
-    status: "healthy", 
+app.get("/health", async (_req, res) => {
+  let activeRooms: string[] = [];
+  let status = "healthy";
+
+  try {
+    activeRooms = await storage.listActiveRooms();
+  } catch (error) {
+    status = "degraded";
+    log(`Health check storage error: ${(error as Error).message}`);
+  }
+
+  const snapshot = await metrics.snapshot(activeRooms.length);
+
+  res.status(200).json({
+    status,
     timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
-    environment: process.env.NODE_ENV || "development"
+    environment: process.env.NODE_ENV || "development",
+    ...snapshot,
   });
 });
 
