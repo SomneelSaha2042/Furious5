@@ -167,7 +167,7 @@ export function GameTableView({
         </motion.div>
       </header>
 
-      <section className="felt-surface felt-ring relative p-4 sm:p-6 lg:p-8">
+      <section className="felt-surface felt-readable felt-ring relative p-4 sm:p-6 lg:p-8">
         <div className="relative z-10 flex flex-col gap-6">
           <div className="lg:hidden flex flex-col gap-4">
             <div className="flex items-stretch gap-3 overflow-x-auto pb-2">
@@ -178,7 +178,7 @@ export function GameTableView({
                     <motion.div
                       key={player.id}
                       className={cn(
-                        'min-w-[220px] flex-shrink-0 rounded-lg border border-white/10 bg-black/16 p-3 shadow-lg',
+                        'min-w-[220px] flex-shrink-0 rounded-lg border border-white/15 bg-black/25 p-3 shadow-lg',
                         isCurrentTurn && 'ring-2 ring-accent shadow-lg'
                       )}
                       initial={{ opacity: 0, y: 12 }}
@@ -211,7 +211,7 @@ export function GameTableView({
                 <motion.div
                   key={player.id}
                   className={cn(
-                    'rounded-lg border border-white/10 bg-black/16 p-4 shadow-lg',
+                    'rounded-lg border border-white/15 bg-black/25 p-4 shadow-lg',
                     currentTurnPlayer?.id === player.id && 'ring-2 ring-accent shadow-lg'
                   )}
                   initial={{ opacity: 0, x: -18 }}
@@ -239,7 +239,7 @@ export function GameTableView({
                 <motion.div
                   key={player.id}
                   className={cn(
-                    'rounded-lg border border-white/10 bg-black/16 p-4 shadow-lg',
+                    'rounded-lg border border-white/15 bg-black/25 p-4 shadow-lg',
                     currentTurnPlayer?.id === player.id && 'ring-2 ring-accent shadow-lg'
                   )}
                   initial={{ opacity: 0, x: 18 }}
@@ -311,18 +311,18 @@ function TableDropPanel({
 }: TableDropPanelProps) {
   return (
     <motion.div
-      className={cn('rounded-lg border border-white/10 bg-black/18 p-4 text-white shadow-2xl sm:p-6', className)}
+      className={cn('rounded-lg border border-white/20 bg-black/30 p-4 text-white shadow-2xl sm:p-6', className)}
       initial={{ scale: 0.96, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
       transition={{ duration: 0.22 }}
     >
       <div className="mb-3 flex items-center justify-between">
-        <div className="flex items-center gap-2 text-muted-foreground">
+        <div className="flex items-center gap-2 text-emerald-50/80">
           <DropCardIcon className="h-4 w-4" />
           <span className="heading-subtle text-xs">Table Drop</span>
         </div>
         {tableDrop && (
-          <span className="text-xs text-muted-foreground">
+          <span className="text-xs text-emerald-50/70">
             {dropKindLabel(tableDrop.kind)} - {tableDrop.cards.length} card(s)
           </span>
         )}
@@ -345,7 +345,7 @@ function TableDropPanel({
           ) : (
             <motion.p
               key="empty-table"
-              className="max-w-xs text-center text-sm text-muted-foreground"
+              className="max-w-xs text-center text-sm text-emerald-50/75"
               initial={{ opacity: 0 }}
               animate={{ opacity: 0.85 }}
             >
@@ -378,7 +378,7 @@ function TableDropPanel({
               })}
             </div>
           ) : (
-            <p className="text-center text-xs text-muted-foreground" data-testid="take-cards-hint">
+            <p className="text-center text-xs text-emerald-50/75" data-testid="take-cards-hint">
               {!isMyTurn
                 ? 'Wait for your turn to take cards.'
                 : turnStage === 'start'
@@ -419,7 +419,7 @@ function PlayerBadge({ player, isCurrentTurn, index }: PlayerBadgeProps) {
             <p className="font-semibold" data-testid={`player-name-${index}`}>
               {player.name}
             </p>
-            <p className="text-xs text-muted-foreground">{player.hand.length} card{player.hand.length === 1 ? '' : 's'}</p>
+            <p className="text-xs text-emerald-50/70">{player.hand.length} card{player.hand.length === 1 ? '' : 's'}</p>
           </div>
         </div>
         <div className="chip-stack px-3 py-1 text-xs font-semibold">
@@ -432,11 +432,11 @@ function PlayerBadge({ player, isCurrentTurn, index }: PlayerBadgeProps) {
         {Array.from({ length: Math.min(player.hand.length, 8) }).map((_, cardIndex) => (
           <div
             key={`${player.id}-card-${cardIndex}`}
-            className="h-12 w-8 rounded-md bg-secondary/40 border border-white/10"
+            className="h-12 w-8 rounded-md border border-white/20 bg-white/8"
           />
         ))}
         {player.hand.length > 8 && (
-          <span className="ml-2 text-xs text-muted-foreground">+{player.hand.length - 8}</span>
+          <span className="ml-2 text-xs text-emerald-50/70">+{player.hand.length - 8}</span>
         )}
       </div>
     </div>
