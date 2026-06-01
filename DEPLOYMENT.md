@@ -1,326 +1,205 @@
 # Production Deployment Guide
 
-## Overview
-This guide covers deploying the Furious Five card game application to production.
+This app is designed to deploy as one Node service that serves the React frontend, Express API, and `/ws` WebSocket server.
 
-## Prerequisites
-- Node.js 20.x or higher
-- npm or yarn
-- Docker (optional, for containerized deployment)
+The preferred production deployment is Docker. Railway Hobby with Redis is the primary supported target.
 
-## Environment Configuration
+## Production Architecture
 
-### Required Environment Variables
-Create a `.env` file based on `.env.example`:
+```text
+Browser clients
+  -> HTTPS / WSS
+  -> Node container
+     -> Express API and React static frontend
+     -> ws WebSocket server at /ws
+     -> in-process room connection map
+     -> storage.mutateRoom(...) for safe state changes
+     -> Redis room persistence when REDIS_URL is set
+```
 
-```bash
-# Application port (defaults to 5000 if unset)
-PORT=5000
+Use one app replica. Multiple replicas are not supported yet because WebSocket room fanout is process-local.
 
-# The deployment environment (development | production)
+## Environment Variables
+
+Required for production:
+
+```text
 NODE_ENV=production
-
-# CORS origin (set to your domain or * for all)
 CORS_ORIGIN=https://yourdomain.com
 ```
 
-### Optional Environment Variables
-- `CORS_ORIGIN`: Set to your frontend domain for security (default: `*`)
+Common platform/runtime variables:
 
-## Deployment Methods
-
-### Method 1: Traditional Node.js Deployment
-
-#### 1. Install Dependencies
-```bash
-npm ci --only=production
+```text
+PORT=5000
 ```
 
-#### 2. Build the Application
-```bash
-npm run build
+Redis variables:
+
+```text
+REDIS_URL=redis://...
+ROOM_TTL_SECONDS=14400
+REDIS_LOCK_TTL_MS=5000
+REDIS_LOCK_TIMEOUT_MS=2000
 ```
 
-This will:
-- Build the React frontend using Vite
-- Bundle the Express backend using esbuild
-- Output everything to the `dist/` directory
+If `REDIS_URL` is not set, the app uses in-memory storage. That is fine for local development but not recommended for production restarts.
 
-#### 3. Start the Production Server
-```bash
-npm start
-```
+## Docker Deployment
 
-The server will start on the port specified in the `PORT` environment variable (default: 5000).
+Build the image:
 
-### Method 2: Docker Deployment
-
-#### 1. Build the Docker Image
 ```bash
 docker build -t furious5:latest .
 ```
 
-#### 2. Run the Container
+Run with Redis:
+
 ```bash
 docker run -d \
   -p 5000:5000 \
   -e NODE_ENV=production \
-  -e PORT=5000 \
   -e CORS_ORIGIN=https://yourdomain.com \
+  -e REDIS_URL=redis://your-redis-url \
+  -e ROOM_TTL_SECONDS=14400 \
   --name furious5-app \
   furious5:latest
 ```
 
-#### 3. Using Docker Compose
-Create a `docker-compose.yml`:
+The Dockerfile runs:
 
-```yaml
-version: '3.8'
+- `npm ci`
+- `npm run build`
+- `npm prune --omit=dev`
+- `node dist/index.js`
 
-services:
-  app:
-    build: .
-    ports:
-      - "5000:5000"
-    environment:
-      - NODE_ENV=production
-      - PORT=5000
-      - CORS_ORIGIN=https://yourdomain.com
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:5000/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+The container healthcheck calls `/health` using the runtime `PORT`.
+
+## Railway
+
+Use [RAILWAY_DEPLOYMENT.md](RAILWAY_DEPLOYMENT.md) as the source of truth.
+
+Summary:
+
+1. Deploy from GitHub.
+2. Let Railway use the root `Dockerfile`.
+3. Add a Redis service in the same Railway project.
+4. Set:
+
+```text
+NODE_ENV=production
+CORS_ORIGIN=https://your-app.up.railway.app
+ROOM_TTL_SECONDS=14400
+REDIS_URL=${{Redis.REDIS_URL}}
 ```
 
-Run with:
+5. Keep replicas at `1`.
+6. Verify `/health` reports `redis: "connected"`.
+
+## Traditional Node Deployment
+
+Traditional deployment still works when a host provides Node.js 20+:
+
 ```bash
-docker-compose up -d
+npm ci
+npm run build
+NODE_ENV=production npm start
 ```
 
-### Method 3: Cloud Platform Deployment
-
-#### Deploying to Cloud Platforms
-
-**General Requirements:**
-- Build command: `npm run build`
-- Start command: `npm start`
-- Port: Uses `PORT` environment variable (defaults to 5000)
-
-**Platform-Specific Notes:**
-
-**Heroku:**
-```bash
-# Create Heroku app
-heroku create your-app-name
-
-# Set environment variables
-heroku config:set NODE_ENV=production
-heroku config:set CORS_ORIGIN=https://your-app-name.herokuapp.com
-
-# Deploy
-git push heroku main
-```
-
-**Railway:**
-- Connect your GitHub repository
-- Railway will auto-detect the Node.js project
-- Set environment variables in the Railway dashboard
-- Deploy automatically on push
-
-**Render:**
-- Create a new Web Service
-- Build Command: `npm run build`
-- Start Command: `npm start`
-- Set environment variables in the dashboard
-
-**DigitalOcean App Platform:**
-- Connect your repository
-- Select Node.js environment
-- Set build and run commands
-- Configure environment variables
-
-## Production Checklist
-
-### Security
-- [x] HTTPS enabled (handled by reverse proxy/platform)
-- [x] Security headers configured (helmet)
-- [x] Rate limiting enabled
-- [x] CORS configured properly
-- [x] Environment variables secured
-- [x] No sensitive data in logs
-
-### Performance
-- [x] Response compression enabled
-- [x] Static file caching
-- [x] WebSocket connection handling
-- [x] Graceful shutdown implemented
-
-### Monitoring
-- [x] Health check endpoint available at `/health`
-- [ ] Consider adding application monitoring (e.g., Sentry)
-- [ ] Consider adding performance monitoring (e.g., New Relic)
-- [ ] Set up log aggregation if needed
-
-### High Availability (Optional)
-- [ ] Load balancer configuration
-- [ ] Multiple instances/containers
-- [ ] Session persistence strategy
-- [ ] Database clustering (if using persistent storage)
+Set `REDIS_URL` for production persistence.
 
 ## Health Checks
 
-The application exposes a health check endpoint at `/health`:
+Endpoints:
 
-```bash
-curl http://localhost:5000/health
+```text
+/health
+/api/health
 ```
 
-Response:
+Example:
+
 ```json
 {
   "status": "healthy",
-  "timestamp": "2025-12-23T10:30:00.000Z",
-  "uptime": 3600.5,
-  "environment": "production"
+  "timestamp": "2026-06-01T00:00:00.000Z",
+  "environment": "production",
+  "redis": "connected",
+  "activeRooms": 4,
+  "activeSockets": 18,
+  "messagesReceived": 920,
+  "messagesSent": 2400,
+  "roomsCreated": 12,
+  "uptime": 3600,
+  "memoryMb": 160,
+  "heapUsedMb": 48
 }
 ```
 
-## Monitoring and Logs
+If Redis cannot be queried, health responds with `status: "degraded"` rather than failing the request.
 
-### Viewing Logs
+## Load Testing
 
-**Docker:**
+Run against a local or deployed WebSocket endpoint:
+
 ```bash
-docker logs -f furious5-app
+npm run load:ws -- --url=wss://your-app.up.railway.app/ws --rooms=20 --players=5 --durationMs=600000
 ```
 
-**Traditional Deployment:**
-Logs are written to stdout/stderr. Use process managers like PM2:
-```bash
-npm install -g pm2
-pm2 start npm --name "furious5" -- start
-pm2 logs furious5
-```
+Pass criteria for the current Railway Hobby target:
 
-### Key Metrics to Monitor
-- Response times (logged for API endpoints)
-- Active WebSocket connections
-- Memory usage
-- CPU usage
-- Error rates
+- App does not crash
+- Redis remains connected
+- Error/disconnect counts stay low
+- p95 action-to-state-update latency is roughly under 300-500 ms
+- Memory remains stable
 
-## Scaling Considerations
+## Restart Recovery Test
 
-### Horizontal Scaling
-The application is stateless except for:
-- In-memory game state storage
-- WebSocket connections
+1. Create a room.
+2. Join 3-5 players.
+3. Start a game.
+4. Restart or redeploy the app.
+5. Reconnect with saved `roomCode` and `playerId`.
+6. Confirm state is restored from Redis.
 
-For horizontal scaling, consider:
-1. Using a shared database (PostgreSQL, MongoDB)
-2. Using Redis for session storage
-3. Implementing sticky sessions for WebSocket connections
-4. Using a pub/sub system for multi-server communication
+## Scaling
 
-### Vertical Scaling
-- Increase memory allocation for more concurrent games
-- Increase CPU for faster game state calculations
+Current supported production scaling:
+
+- Scale vertically within one app replica.
+- Use Redis for room state persistence.
+- Keep WebSocket connection maps in memory.
+
+Not supported yet:
+
+- Multiple app replicas
+- Redis Pub/Sub fanout
+- Socket.IO adapter fanout
+- Persistent accounts/history database
+
+To support multiple replicas later, add distributed room fanout so a broadcast from one process reaches sockets connected to other processes.
 
 ## Troubleshooting
 
-### Port Already in Use
-```bash
-# Find process using port
-lsof -i :5000
-# Kill process
-kill -9 <PID>
-```
+Redis disconnected:
 
-### Build Failures
-```bash
-# Clear node_modules and reinstall
-rm -rf node_modules package-lock.json
-npm install
-npm run build
-```
+- Confirm `REDIS_URL` is set on the app service.
+- Confirm the Redis service is in the same Railway project/environment.
+- Check `/health` for `lastRedisError`.
 
-### WebSocket Connection Issues
-- Ensure WebSocket endpoint `/ws` is not blocked by firewall
-- Check that reverse proxy supports WebSocket upgrade
-- Verify CORS settings allow WebSocket connections
+Rooms disappear after a while:
 
-### Container Issues
-```bash
-# View container logs
-docker logs furious5-app
+- This is expected for abandoned rooms.
+- Default `ROOM_TTL_SECONDS` is 14400 seconds, or 4 hours.
 
-# Inspect container
-docker inspect furious5-app
+WebSocket connections fail:
 
-# Access container shell
-docker exec -it furious5-app sh
-```
+- Confirm the platform supports WebSocket upgrades.
+- Confirm the public URL uses `wss://` in production.
+- Confirm `/ws` is not blocked by proxy rules.
 
-## Maintenance
+CORS errors:
 
-### Updating the Application
-```bash
-# Pull latest code
-git pull origin main
-
-# Install dependencies
-npm ci --only=production
-
-# Build
-npm run build
-
-# Restart (Docker)
-docker-compose restart
-
-# Restart (PM2)
-pm2 restart furious5
-```
-
-### Backup Considerations
-Since the application uses in-memory storage by default:
-- Game state is lost on restart
-- Consider implementing persistent storage for production
-- Back up any configuration files and environment variables
-
-## Security Best Practices
-
-1. **Keep Dependencies Updated**
-   ```bash
-   npm audit
-   npm audit fix
-   ```
-
-2. **Use Environment Variables**
-   - Never commit `.env` files
-   - Use platform-specific secret management
-
-3. **Regular Security Audits**
-   - Monitor for vulnerabilities
-   - Update Node.js and dependencies regularly
-
-4. **Network Security**
-   - Use HTTPS in production
-   - Configure firewall rules
-   - Implement DDoS protection
-
-## Support
-
-For issues or questions:
-1. Check the troubleshooting section above
-2. Review application logs
-3. Check the health endpoint
-4. Review the repository issues on GitHub
-
-## Additional Resources
-
-- [Express.js Production Best Practices](https://expressjs.com/en/advanced/best-practice-performance.html)
-- [Node.js Security Best Practices](https://nodejs.org/en/docs/guides/security/)
-- [Docker Best Practices](https://docs.docker.com/develop/dev-best-practices/)
+- Set `CORS_ORIGIN` to the exact HTTPS origin.
+- Use `*` only for local development or temporary testing.

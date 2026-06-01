@@ -1,331 +1,235 @@
-# Furious Five 🃏
+# Furious Five
 
-A real-time multiplayer card game built with TypeScript, React, and Socket.IO. Race to get your hand total under five points, call at the perfect moment, and enjoy a newly refreshed felt-table experience tuned for phones, tablets, and desktops.
+Furious Five is a real-time multiplayer card game for 2-5 players. It is built as a single TypeScript app: React for the frontend, Express for HTTP/static serving, and `ws` for the `/ws` multiplayer channel.
 
-[![CI](https://github.com/SomneelSaha2004/Furious5/workflows/CI/badge.svg)](https://github.com/SomneelSaha2004/Furious5/actions)
-[![Docker](https://github.com/SomneelSaha2004/Furious5/workflows/Docker%20Build%20and%20Push/badge.svg)](https://github.com/SomneelSaha2004/Furious5/actions)
+The app runs locally with in-memory room storage. In production, setting `REDIS_URL` switches game state to Redis so rooms can survive app restarts and player reconnects.
 
-## 🎮 Game Overview
+## Current Capabilities
 
-Furious Five is a fast-paced card game for 2-5 players where strategy meets quick thinking. Players compete to achieve the lowest hand total while managing risk and timing their calls perfectly.
+- Real-time multiplayer rooms over WebSocket at `/ws`
+- React frontend served by the same Express service
+- Local development with in-memory `MemStorage`
+- Production room persistence with Redis when `REDIS_URL` is configured
+- Per-room mutation safety with `storage.mutateRoom(...)`
+- Redis room TTLs, reconnect recovery, and active-room tracking
+- Health endpoints with Redis status, active rooms, active sockets, memory, and uptime
+- Docker-first production deployment, including Railway Hobby
+- Configurable WebSocket load test for roughly 100 concurrent clients
 
-### How to Play
+The current production target is one app replica. Do not scale to multiple replicas until WebSocket fanout is moved to Redis Pub/Sub or another distributed adapter.
 
-**Objective:** Get your hand total to 5 points or less, then call the game to win.
+## Game Overview
 
-**Setup:**
-- Each player starts with 5 cards
-- Cards are worth their face value (Ace = 1, Face cards = 11-13)
-- Players take turns in sequence
+Furious Five is a fast card game where players try to reduce their hand total and call at the right moment.
 
-**Turn Actions:**
-1. **Drop** a valid combination (or a single card) to clear points from your hand
-2. **Draw** from the deck or available table drops to refill after playing a combo
-3. **Call** once your hand total is ≤ 5 to trigger the final showdown
+Rules:
 
-**Valid Drops:**
-   - **Single:** Any individual card
-   - **Pair:** Two cards of the same rank
-   - **Trips:** Three cards of the same rank  
-   - **Quads:** Four cards of the same rank
-   - **Straight:** 3+ consecutive cards (A-2-3, 2-3-4, etc.)
+- Each player starts with 5 cards.
+- Ace is worth 1; numbered cards are face value; J/Q/K are 11/12/13.
+- On your turn, drop a valid card set, then draw from the deck or table.
+- You can call when your hand total is 5 or less.
+- The lowest final total wins the round.
 
-**Calling the Game:**
-- When your hand total is ≤ 5 points, you can call the game
-- All other players get one final turn
-- Lowest total wins and takes the pot
-- Tied lowest scores split the winnings
+Valid drops:
 
-**Special Features:**
-- 30-second animated turn timer with auto-drop safety net
-- Mobile-first table shell with swipe-friendly hand slider
-- Framer Motion micro-interactions and tactile feedback
-- Light/dark theme support with cohesive casino-inspired tokens
-- Automatic game state management and reconnection handling
+- Single card
+- Pair
+- Trips
+- Quads
+- Straight of 3 or more consecutive ranks
 
-## ✨ What’s New in the Latest Polish Pass
+## Tech Stack
 
-- **Unified design tokens:** refreshed color system, typography ramp, and felt/chip utilities (`client/src/index.css` + `theme-provider`).
-- **Responsive table shell:** grid-based layout that adapts to tablet/phone, with clear turn markers and Lucide icons.
-- **Swipe-friendly player hand:** gesture-ready slider with large touch targets and combo detection.
-- **Modern lobby & shells:** mobile headers, stacked panels, and accordion-powered debug tooling.
-- **Motion cues everywhere:** countdown ring, card drops, and lobby transitions powered by Framer Motion.
+Frontend:
 
-Screenshots and short clips live in `attached_assets/` to guide future styling tweaks.
+- React 18
+- TypeScript
+- Tailwind CSS and shadcn/ui components
+- Framer Motion
+- Wouter routing
 
-## 🚀 Quick Start
+Backend:
 
-### Prerequisites
+- Node.js 20
+- Express
+- `ws` WebSocket server at `/ws`
+- Redis-backed storage for production rooms
+- Zod validation for room state and socket payloads
+
+Build and deployment:
+
+- Vite frontend build
+- esbuild server bundle
+- Multi-stage Dockerfile
+- Railway-compatible `PORT` handling
+
+## Project Structure
+
+```text
+client/src/              React app
+server/index.ts          Express entrypoint, middleware, /health
+server/routes.ts         API routes and WebSocket handlers
+server/storage/          MemStorage, RedisStorage, mutation API
+server/metrics.ts        Runtime metrics snapshot
+shared/game-engine.ts    Pure game rules and state transitions
+shared/game-types.ts     Shared TypeScript types and Zod schemas
+scripts/build.mjs        Production build script
+scripts/load-ws.ts       WebSocket load-test script
+Dockerfile               Production container build
+RAILWAY_DEPLOYMENT.md    Railway + Redis deployment guide
+```
+
+## Local Development
+
+Prerequisites:
+
 - Node.js 20+
 - npm
 
-### Installation & Setup
+Install dependencies:
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/SomneelSaha2042/Furious5
-   cd furious-five
-   ```
-
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
-
-3. **Start the development server**
-   ```bash
-   npm run dev
-   ```
-
-4. **Open your browser**
-   - Navigate to `http://localhost:5000`
-   - Create a room and share the room code with friends
-   - Start playing!
-
-## 🏗️ Technical Architecture
-
-### Frontend
-- **React 18** with TypeScript for type safety
-- **Tailwind CSS** + **shadcn/ui** for modern, accessible UI components
-- **Custom design tokens** for brand colors, felt surfaces, and chip accents
-- **Framer Motion** for micro-interactions and animated system feedback
-- **Wouter** for lightweight client-side routing
-- **Socket.IO Client** for real-time game communication
-
-### Backend
-- **Express.js** server with TypeScript
-- **Socket.IO** for WebSocket-based multiplayer functionality
-- **In-memory storage** for fast, ephemeral game sessions
-- **Zod** for runtime validation and type safety
-
-### Game Engine
-- Pure functional game logic separated from server concerns
-- Deterministic state transitions for reliable multiplayer experience
-- Room-based sessions supporting 2-5 concurrent players
-- Automatic cleanup of inactive games
-- Shared schema + Zod validation to keep client/server aligned
-
-### Design System
-
-- Theme tokens are defined in `client/src/index.css` and hydrated via `client/src/components/theme-provider.tsx`.
-- Felt/table utilities (`felt-surface`, `chip-stack`, `glass-panel`) create casino-inspired surfaces out of the box.
-- Typography ramps use `Inter` + `Poppins` with heading/body weights mapped to CSS variables.
-- Adjusting brand colors or motion curves in the token set immediately ripples through every surface.
-
-## 📁 Project Structure
-
-```
-furious-five/
-├── client/src/           # React frontend application
-│   ├── components/       # Reusable UI components
-│   ├── pages/           # Route components
-│   └── hooks/           # Custom React hooks
-├── server/              # Express.js backend
-│   ├── index.ts         # Server entry point
-│   ├── routes.ts        # API route definitions
-│   └── storage.ts       # In-memory data management
-├── shared/              # Common code between client/server
-│   ├── game-engine.ts   # Core game logic
-│   ├── game-types.ts    # TypeScript type definitions
-│   └── schema.ts        # Data validation schemas
-└── README.md           # This file
-```
-
-## 🎯 Key Features
-
-- **Real-time Multiplayer:** Instant state sync with optimistic UI cues
-- **Smart Timer System:** Animated 30-second countdown with auto-drop fallback
-- **Flexible Card Combos:** Singles, multiples, straights, and table draws
-- **Polished Tabletop Feel:** Felt textures, chip stacks, and iconography
-- **Responsive & Accessible:** Touch-optimized controls, keyboard support, high-contrast themes
-- **Automatic Reconnection:** Recovers socket sessions and falls back to HTTP snapshots
-
-## 📱 Manual QA Checklist
-
-Run through these touchpoints after UI tweaks:
-
-1. **Phone (≤ 430px):** confirm hand slider swipes, table drop actions, and lobby stacking.
-2. **Tablet (768-1024px):** ensure side rails align, timers float correctly, and overlays scale.
-3. **Desktop (≥ 1280px):** verify felt surface layout, turn indicators, and motion timing.
-4. **Theme flip:** toggle light/dark to check chip, felt, and typography contrast.
-5. **Latency simulation:** drop combos and watch timer animations for jitter.
-
-## 🎲 Game Strategy Tips
-
-1. **Early Game:** Focus on collecting pairs and trips for efficient hand reduction
-2. **Mid Game:** Watch other players' discards to anticipate their strategies
-3. **End Game:** Time your call carefully - too early and others might beat your score
-4. **Risk Management:** Sometimes it's better to drop high cards even if you can't make combinations
-5. **Observation:** Pay attention to what cards others pick from the graveyard
-
-## 🛠️ Development
-
-### Prerequisites
-
-- Node.js 20.x or higher
-- npm or yarn
-
-### Available Scripts
-
-- `npm run dev` - Start development server with hot reloading
-- `npm run build` - Build production bundles for client and server
-- `npm run start` - Run the production server
-- `npm run check` - Run TypeScript type checking
-- `npm run deploy` - Run the automated deployment script
-- `npm run pm2:start` - Start with PM2 process manager
-- `npm run docker:build` - Build Docker image
-- `npm run docker:run` - Run Docker container
-
-### Development Setup
-
-1. Clone the repository:
-```bash
-git clone https://github.com/SomneelSaha2004/Furious5.git
-cd Furious5
-```
-
-2. Install dependencies:
 ```bash
 npm install
 ```
 
-3. Create environment file:
-```bash
-cp .env.example .env
-```
+Start the development server:
 
-4. Start development server:
 ```bash
 npm run dev
 ```
 
-The application will be available at `http://localhost:5000`
+Open:
 
-## 🚀 Production Deployment
-
-For detailed deployment instructions, see [DEPLOYMENT.md](DEPLOYMENT.md).
-
-### Quick Start
-
-**Option 1: Traditional Deployment**
-```bash
-npm ci --only=production
-npm run build
-npm start
+```text
+http://localhost:5000
 ```
 
-**Option 2: Docker**
+By default, local development uses in-memory storage. To test Redis locally, run a Redis instance and set `REDIS_URL`.
+
+## Scripts
+
 ```bash
-docker build -t furious5:latest .
-docker run -d -p 5000:5000 --env-file .env furious5:latest
+npm run dev       # Start the development server
+npm run check     # TypeScript check
+npm run build     # Build client and server into dist/
+npm start         # Run the production build
+npm run load:ws   # Run the WebSocket load test
 ```
 
-**Option 3: Docker Compose**
+Docker helpers:
+
 ```bash
-docker-compose -f docker-compose.prod.yml up -d
+npm run docker:build
+npm run docker:run
+npm run docker:logs
+npm run docker:stop
 ```
 
-**Option 4: Automated Script**
-```bash
-./deploy.sh
+## Environment Variables
+
+Common variables:
+
+```text
+NODE_ENV=production
+PORT=5000
+CORS_ORIGIN=https://yourdomain.com
 ```
 
-### Deployment Features
+Redis production variables:
 
-✅ **Security:**
-- Helmet.js for security headers
-- CORS configuration
-- Rate limiting on API and WebSocket endpoints
-- Input validation and sanitization
-
-✅ **Performance:**
-- Response compression (gzip)
-- Static file caching
-- Efficient WebSocket connection handling
-- Horizontal scaling ready
-
-✅ **Reliability:**
-- Health check endpoint at `/health`
-- Graceful shutdown handling
-- Process management with PM2
-- Docker containerization support
-
-✅ **Monitoring:**
-- Structured logging
-- Request/response tracking
-- Error handling and reporting
-- Health status monitoring
-
-### Platform-Specific Deployment
-
-**Heroku:**
-```bash
-heroku create your-app-name
-git push heroku main
+```text
+REDIS_URL=redis://...
+ROOM_TTL_SECONDS=14400
+REDIS_LOCK_TTL_MS=5000
+REDIS_LOCK_TIMEOUT_MS=2000
 ```
 
-**Railway / Render / DigitalOcean:**
-- Build Command: `npm run build`
-- Start Command: `npm start`
-- Port: Auto-detected from `PORT` env variable
+If `REDIS_URL` is absent, the server uses local `MemStorage`.
 
-**Kubernetes:**
-```bash
-kubectl apply -f k8s-deployment.yml
+## Health Checks
+
+The app exposes:
+
+```text
+/health
+/api/health
 ```
 
-### Environment Variables
+Example response:
 
-Required:
-- `NODE_ENV` - Set to `production` for production deployments
-- `PORT` - Server port (default: 5000)
-
-Optional:
-- `CORS_ORIGIN` - Allowed origins for CORS (default: `*`)
-
-## 📊 Health Monitoring
-
-Check application health:
-```bash
-curl http://localhost:5000/health
-```
-
-Response:
 ```json
 {
   "status": "healthy",
-  "timestamp": "2025-12-23T10:30:00.000Z",
-  "uptime": 3600.5,
-  "environment": "production"
+  "redis": "connected",
+  "activeRooms": 3,
+  "activeSockets": 12,
+  "messagesReceived": 240,
+  "messagesSent": 520,
+  "uptime": 1800,
+  "memoryMb": 140
 }
 ```
 
-## 🛳️ Deployment
+When Redis is unavailable, health returns `status: "degraded"` and includes Redis error context when available.
 
-The Express server listens on the port defined by the `PORT` environment variable (defaults to `5000`) and serves the static React build alongside the WebSocket endpoint at `/ws`.
+## Production Deployment
 
-### Scaling Considerations
+Railway is the primary documented deployment path. Use the root `Dockerfile`; do not configure separate Railway build/start commands unless intentionally moving away from Docker.
 
-The application uses in-memory storage by default. For production scaling:
-- Consider using Redis for shared session/game state
-- Implement sticky sessions for WebSocket connections
-- Use a load balancer with WebSocket support
-- Set up database for persistent storage
+Railway app variables:
 
-See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed scaling strategies.
+```text
+NODE_ENV=production
+CORS_ORIGIN=https://your-app.up.railway.app
+ROOM_TTL_SECONDS=14400
+REDIS_URL=${{Redis.REDIS_URL}}
+```
 
-### Contributing
+Keep app replicas at `1`.
 
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/amazing-feature`
-3. Commit your changes: `git commit -m 'Add amazing feature'`
-4. Push to the branch: `git push origin feature/amazing-feature`
-5. Open a Pull Request
+See [RAILWAY_DEPLOYMENT.md](RAILWAY_DEPLOYMENT.md) for the complete setup.
 
-## 📝 License
+Generic Docker run:
 
-This project is open source and available under the [MIT License](LICENSE).
+```bash
+docker build -t furious5:latest .
+docker run -d \
+  -p 5000:5000 \
+  -e NODE_ENV=production \
+  -e CORS_ORIGIN=https://yourdomain.com \
+  -e REDIS_URL=redis://your-redis-url \
+  --name furious5-app \
+  furious5:latest
+```
 
----
+## Load Testing
 
-**Ready to play?** Start a game and see if you can master the art of Furious Five! 🃏✨
+Default profile: 20 rooms, 5 players per room, 100 connected clients.
+
+```bash
+npm run load:ws -- --url=wss://your-app.up.railway.app/ws --rooms=20 --players=5 --durationMs=600000
+```
+
+Watch:
+
+- Error count
+- Disconnect count
+- p95 latency
+- `/health` memory and Redis status
+
+## Scaling Notes
+
+Current safe production shape:
+
+```text
+1 Node service replica
+1 Redis service
+in-memory WebSocket connection map
+Redis room state
+```
+
+Do not run multiple app replicas yet. Room state is shared through Redis, but WebSocket broadcasts are still local to the process. Multi-replica support needs Redis Pub/Sub or a similar distributed fanout layer.
+
+## License
+
+MIT
