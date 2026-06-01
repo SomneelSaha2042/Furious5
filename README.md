@@ -1,8 +1,8 @@
 # Furious Five
 
-Productionized real-time multiplayer WebSocket system with Redis-backed state, safe room mutations, reconnect recovery, health checks, Docker deployment, and load testing.
+Real-time multiplayer WebSocket project with Redis-backed state, safer room mutations, reconnect recovery, health checks, Docker deployment, and load testing.
 
-This repo is a TypeScript full-stack application used to run a low-latency multiplayer room system. The domain is a card-table experience, but the engineering focus is the real-time architecture: WebSocket session coordination, Redis persistence, race-safe state transitions, restart recovery, and production deployment on Railway.
+This repo is a TypeScript full-stack application for experimenting with a low-latency multiplayer room system. The domain is a card-table experience, but the interesting parts are the real-time pieces: WebSocket session coordination, Redis persistence, room state transitions, reconnect behavior, and deployment on Railway.
 
 ## Production Architecture
 
@@ -18,7 +18,7 @@ Browser clients
      -> exposes health and metrics endpoints
 ```
 
-Current production target:
+Current deployment target:
 
 ```text
 1 Dockerized Node service
@@ -26,29 +26,29 @@ Current production target:
 1 app replica
 ```
 
-In-memory storage is a local-development fallback only. Production state is Redis-backed.
+In-memory storage is a local-development fallback. Railway-style deployments should use Redis for room state.
 
-## Key Capabilities
+## Current Capabilities
 
 - WebSocket server using `ws` at `/ws`
-- Redis-backed room state persistence for production
+- Redis-backed room state persistence when `REDIS_URL` is configured
 - Local `MemStorage` fallback when `REDIS_URL` is not set
 - Per-room mutation safety through `storage.mutateRoom(...)`
-- Redis token-based room locks to prevent stale concurrent writes
+- Redis token-based room locks to reduce stale concurrent writes
 - Reconnect recovery using saved `roomCode` and `playerId`
 - Room TTL refresh and active-room tracking in Redis
 - Runtime health checks with Redis status, active rooms, active sockets, memory, and uptime
-- Docker-first production deployment for Railway
+- Docker-first deployment path for Railway
 - Configurable WebSocket load test for roughly 100 concurrent users
 
-## What This Demonstrates
+## Learning Focus
 
-- Productionizing a real-time WebSocket app beyond a purely in-memory prototype
-- Designing a storage abstraction that supports local development and Redis production mode
-- Preventing race conditions in room-based multiplayer state with mutation locks
-- Preserving room state across app restarts and reconnects
-- Instrumenting a Node service with operational health and load-test visibility
-- Deploying a single-service React + Express app through a production Dockerfile
+- Moving a real-time WebSocket app beyond a purely in-memory prototype
+- Using one storage abstraction for local development and Redis-backed deployments
+- Reducing stale-write risk in room-based multiplayer state with mutation locks
+- Supporting reconnect and restart recovery for active rooms
+- Adding practical health checks and load-test visibility
+- Deploying a single-service React + Express app through a Dockerfile
 
 ## Stack
 
@@ -65,7 +65,7 @@ Backend:
 - Node.js 20
 - Express
 - `ws` WebSocket server
-- Redis production storage
+- Redis-backed deployment storage
 - Zod validation
 - Helmet, CORS, compression, and rate limiting
 
@@ -101,13 +101,13 @@ REDIS_LOCK_TTL_MS=5000
 REDIS_LOCK_TIMEOUT_MS=2000
 ```
 
-All important state changes go through:
+Important state changes go through:
 
 ```ts
 storage.mutateRoom(roomCode, mutator)
 ```
 
-That gives the app one safe mutation path for room joins, ready state changes, turn actions, reconnect status updates, and delayed disconnect handling.
+That gives the app one mutation path for room joins, ready state changes, turn actions, reconnect status updates, and delayed disconnect handling.
 
 ## WebSocket Flow
 
@@ -249,7 +249,7 @@ REDIS_LOCK_TIMEOUT_MS=2000
 
 `REDIS_URL` is the switch between local fallback storage and production Redis persistence.
 
-## Production Deployment
+## Deployment
 
 Railway is the primary documented deployment path. Use the root `Dockerfile`; do not configure separate Railway build/start commands unless intentionally moving away from Docker.
 
@@ -285,7 +285,7 @@ docker run -d \
 
 ## Load Testing
 
-Default production-readiness profile:
+Default heavier local/Railway test profile:
 
 ```text
 20 rooms
@@ -309,7 +309,7 @@ Watch:
 
 ## Scaling Notes
 
-Current safe production shape:
+Current intended deployment shape:
 
 ```text
 1 Node service replica
