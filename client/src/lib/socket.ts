@@ -5,6 +5,7 @@ export interface SocketMessage {
 
 export class GameSocket {
   private ws: WebSocket | null = null;
+  private shouldReconnect = true;
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 10;
   private reconnectDelay = 1000;
@@ -22,6 +23,7 @@ export class GameSocket {
   }
   
   private connect(): void {
+    this.shouldReconnect = true;
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const wsUrl = `${protocol}//${window.location.host}/ws`;
     
@@ -63,8 +65,12 @@ export class GameSocket {
       }
     };
     
-    this.ws.onclose = () => {
-      console.log('WebSocket disconnected');
+    this.ws.onclose = (event) => {
+      console.log('WebSocket disconnected', {
+        code: event.code,
+        reason: event.reason,
+        wasClean: event.wasClean,
+      });
       this.connectionState = 'disconnected';
       this.stopHeartbeat();
       
@@ -74,7 +80,9 @@ export class GameSocket {
         handler({});
       }
       
-      this.attemptReconnect();
+      if (this.shouldReconnect) {
+        this.attemptReconnect();
+      }
     };
     
     this.ws.onerror = (error) => {
@@ -179,6 +187,7 @@ export class GameSocket {
   }
   
   public close(): void {
+    this.shouldReconnect = false;
     this.stopHeartbeat();
     if (this.reconnectTimer) {
       clearTimeout(this.reconnectTimer);
@@ -191,4 +200,8 @@ export class GameSocket {
   }
 }
 
-export const gameSocket = new GameSocket();
+const globalSocket = globalThis as typeof globalThis & {
+  __furiousFiveGameSocket?: GameSocket;
+};
+
+export const gameSocket = globalSocket.__furiousFiveGameSocket ??= new GameSocket();

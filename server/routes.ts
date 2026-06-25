@@ -13,7 +13,6 @@ import {
 } from "@shared/game-types";
 import {
   createGame,
-  joinGame,
   startRound,
   applyDrop,
   drawFromDeck,
@@ -22,6 +21,7 @@ import {
   checkInvariants,
   togglePlayerReady,
 } from "@shared/game-engine";
+import { joinOrReconnectPlayer } from "./room-join";
 
 interface ExtendedWebSocket extends WebSocket {
   playerId?: string;
@@ -51,8 +51,19 @@ function errorCodeForJoin(error: Error): string {
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
-  const wss = new WebSocketServer({ server: httpServer, path: "/ws" });
+  const wss = new WebSocketServer({ noServer: true });
   const roomConnections = new Map<string, Set<ExtendedWebSocket>>();
+
+  httpServer.on("upgrade", (request, socket, head) => {
+    const pathname = new URL(request.url ?? "/", "http://localhost").pathname;
+    if (pathname !== "/ws") {
+      return;
+    }
+
+    wss.handleUpgrade(request, socket, head, (webSocket) => {
+      wss.emit("connection", webSocket, request);
+    });
+  });
 
   function generateRoomCode(): string {
     const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -165,8 +176,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }
 
-  wss.on("connection", (socket: ExtendedWebSocket) => {
-    console.log("New WebSocket connection");
+  wss.on("connection", (socket: ExtendedWebSocket, request) => {
+    console.log("New WebSocket connection", {
+      url: request.url,
+      protocol: request.headers["sec-websocket-protocol"],
+      userAgent: request.headers["user-agent"],
+    });
     updateActiveSocketMetric();
 
     socket.lastPing = Date.now();
@@ -221,17 +236,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           case "room:join": {
             const parsed = JoinRoomSchema.parse(message.data);
-            const playerId = `player_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            const newPlayerId = `player_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
             try {
+              let playerId = newPlayerId;
               const updatedState = await storage.mutateRoom(parsed.roomCode, async (gameState) => {
-                if (gameState.phase !== "lobby") {
-                  throw new Error("Game already in progress");
-                }
-                if (gameState.players.some((player) => player.name === parsed.playerName)) {
-                  throw new Error("A player with that name is already in the room");
-                }
-                return joinGame(gameState, parsed.playerName, playerId);
+                const result = joinOrReconnectPlayer(gameState, parsed.playerName, newPlayerId);
+                playerId = result.playerId;
+                return result.state;
               });
 
               socket.playerId = playerId;
@@ -518,8 +530,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     });
 
-    socket.on("close", async () => {
-      console.log("WebSocket connection closed");
+    socket.on("close", async (code, reason) => {
+      console.log("WebSocket connection closed", {
+        code,
+        reason: reason.toString(),
+        roomCode: socket.roomCode,
+        playerId: socket.playerId,
+      });
       updateActiveSocketMetric();
 
       if (socket.roomCode && socket.playerId) {
@@ -584,16 +601,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { roomCode } = req.params;
       const parsed = JoinRoomSchema.parse(req.body);
-      const playerId = `player_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const newPlayerId = `player_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
+      let playerId = newPlayerId;
       const updatedState = await storage.mutateRoom(roomCode, async (gameState) => {
-        if (gameState.phase !== "lobby") {
-          throw new Error("Game already in progress");
-        }
-        if (gameState.players.some((player) => player.name === parsed.playerName)) {
-          throw new Error("A player with that name is already in the room");
-        }
-        return joinGame(gameState, parsed.playerName, playerId);
+        const result = joinOrReconnectPlayer(gameState, parsed.playerName, newPlayerId);
+        playerId = result.playerId;
+        return result.state;
       });
 
       broadcastToRoom(roomCode, {

@@ -21,9 +21,11 @@ export async function setupVite(app: Express, server: Server) {
   const { nanoid } = await import("nanoid");
   
   const viteLogger = createLogger();
+  const port = Number(process.env.PORT || 5000);
 
   const serverOptions = {
     middlewareMode: true,
+    port,
     hmr: { server },
     allowedHosts: true as const,
   };

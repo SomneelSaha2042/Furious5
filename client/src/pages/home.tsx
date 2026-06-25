@@ -75,8 +75,8 @@ export default function Home() {
 
             const data = await response.json();
             if (data.success) {
-              localStorage.setItem('roomCode', data.roomCode);
-              localStorage.setItem('playerId', data.playerId);
+              localStorage.setItem('furious-five-room-code', data.roomCode);
+              localStorage.setItem('furious-five-player-id', data.playerId);
               setLocation('/game');
             } else {
               console.error('HTTP room creation failed:', data.error);
@@ -101,7 +101,7 @@ export default function Home() {
       joinRoom(code, name);
 
       setTimeout(async () => {
-        const currentRoomCode = localStorage.getItem('roomCode');
+        const currentRoomCode = localStorage.getItem('furious-five-room-code');
         if (!currentRoomCode || currentRoomCode !== code) {
           try {
             const response = await fetch(`/api/rooms/${code}/join`, {
@@ -112,8 +112,8 @@ export default function Home() {
 
             const data = await response.json();
             if (data.success) {
-              localStorage.setItem('roomCode', code);
-              localStorage.setItem('playerId', data.playerId);
+              localStorage.setItem('furious-five-room-code', code);
+              localStorage.setItem('furious-five-player-id', data.playerId);
               setLocation('/game');
             } else {
               alert(`Failed to join room: ${data.error}`);
