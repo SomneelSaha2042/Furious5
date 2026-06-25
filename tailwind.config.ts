@@ -63,6 +63,11 @@ export default {
           border: "var(--sidebar-border)",
           ring: "var(--sidebar-ring)",
         },
+        "felt-green": "var(--felt-green)",
+        "action-emerald": "var(--action-emerald)",
+        "victory-gold": "var(--victory-gold)",
+        "loss-crimson": "var(--loss-crimson)",
+        "surface-cream": "var(--surface-cream)",
       },
       fontFamily: {
         sans: ["var(--font-sans)"],

@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Furious Five - Active Table</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&amp;family=Space+Grotesk:wght@500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary-fixed": "#2a1700",
+                        "inverse-on-surface": "#f0f1f2",
+                        "surface-container-high": "#e7e8e9",
+                        "on-secondary-container": "#00714d",
+                        "error": "#ba1a1a",
+                        "surface-bright": "#f8f9fa",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-tint": "#2b6954",
+                        "secondary-container": "#6cf8bb",
+                        "primary-container": "#064e3b",
+                        "felt-green": "#064E3B",
+                        "on-error-container": "#93000a",
+                        "on-tertiary": "#ffffff",
+                        "on-surface-variant": "#404944",
+                        "on-secondary-fixed-variant": "#005236",
+                        "outline-variant": "#bfc9c3",
+                        "on-secondary": "#ffffff",
+                        "surface-dim": "#d9dadb",
+                        "tertiary-fixed": "#ffddb8",
+                        "inverse-surface": "#2e3132",
+                        "on-tertiary-fixed-variant": "#653e00",
+                        "on-background": "#191c1d",
+                        "on-primary-container": "#80bea6",
+                        "error-container": "#ffdad6",
+                        "primary-fixed": "#b0f0d6",
+                        "on-error": "#ffffff",
+                        "primary-fixed-dim": "#95d3ba",
+                        "tertiary": "#442800",
+                        "surface-container-highest": "#e1e3e4",
+                        "background": "#f8f9fa",
+                        "action-emerald": "#10B981",
+                        "tertiary-container": "#623c00",
+                        "tertiary-fixed-dim": "#ffb95f",
+                        "outline": "#707974",
+                        "secondary-fixed": "#6ffbbe",
+                        "surface": "#f8f9fa",
+                        "primary": "#003527",
+                        "on-primary-fixed-variant": "#0b513d",
+                        "on-tertiary-container": "#f69f0d",
+                        "surface-cream": "#FDFBF7",
+                        "surface-container-low": "#f3f4f5",
+                        "secondary": "#006c49",
+                        "on-surface": "#191c1d",
+                        "on-secondary-fixed": "#002113",
+                        "loss-crimson": "#BE123C",
+                        "surface-variant": "#e1e3e4",
+                        "inverse-primary": "#95d3ba",
+                        "secondary-fixed-dim": "#4edea3",
+                        "victory-gold": "#F59E0B",
+                        "on-primary-fixed": "#002117",
+                        "surface-container": "#edeeef",
+                        "on-primary": "#ffffff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "base": "8px",
+                        "container-padding": "24px",
+                        "gutter": "16px",
+                        "card-overlap": "-40px"
+                    },
+                    "fontFamily": {
+                        "label-caps": ["Space Grotesk"],
+                        "headline-lg": ["Plus Jakarta Sans"],
+                        "body-base": ["Plus Jakarta Sans"],
+                        "display-lg": ["Plus Jakarta Sans"],
+                        "headline-lg-mobile": ["Plus Jakarta Sans"],
+                        "title-md": ["Plus Jakarta Sans"],
+                        "card-value": ["Space Grotesk"]
+                    },
+                    "fontSize": {
+                        "label-caps": ["12px", {"lineHeight": "16px", "letterSpacing": "0.1em", "fontWeight": "700"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "700"}],
+                        "body-base": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+                        "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                        "title-md": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                        "card-value": ["24px", {"lineHeight": "24px", "fontWeight": "700"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .card-shadow {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+        .table-inner-glow {
+            box-shadow: inset 0 0 40px rgba(0,0,0,0.2);
+        }
+        .timer-progress {
+            stroke-dasharray: 100;
+            stroke-dashoffset: 26;
+            transition: stroke-dashoffset 1s linear;
+        }
+        .furious-btn {
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+        .furious-btn:active {
+            transform: translateY(2px);
+            box-shadow: none !important;
+        }
+    </style>
+</head>
+<body class="bg-surface-cream min-h-screen font-body-base text-on-surface">
+<!-- Top Navigation Bar (Consistent with Lobby) -->
+<header class="bg-felt-green text-on-primary flex justify-between items-center w-full px-container-padding py-4 z-50 shadow-md">
+<div class="flex items-center gap-4">
+<div class="bg-primary-container p-2 rounded-lg">
+<span class="material-symbols-outlined text-victory-gold">style</span>
+</div>
+<div>
+<h1 class="font-display-lg text-headline-lg-mobile md:text-display-lg tracking-tighter text-victory-gold">Furious Five</h1>
+<div class="flex items-center gap-2">
+<span class="font-label-caps text-label-caps text-on-primary-container opacity-80">FF-9B3WPI</span>
+<span class="flex items-center gap-1 bg-action-emerald/20 text-action-emerald px-2 py-0.5 rounded-full text-[10px] font-bold">
+<span class="w-1.5 h-1.5 bg-action-emerald rounded-full animate-pulse"></span>
+                        Connected
+                    </span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<button class="flex items-center gap-2 bg-primary/40 hover:bg-primary/60 px-4 py-2 rounded-xl transition-all font-bold text-sm">
+<span class="material-symbols-outlined text-sm">logout</span>
+                Leave game
+            </button>
+<button class="p-2 rounded-full bg-primary/20 hover:bg-primary/40 transition-all">
+<span class="material-symbols-outlined">dark_mode</span>
+</button>
+</div>
+</header>
+<main class="max-w-7xl mx-auto px-container-padding py-6 space-y-6">
+<!-- Stats Row -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<!-- Active Turn -->
+<div class="bg-white rounded-2xl p-6 card-shadow border border-outline-variant/30 relative overflow-hidden">
+<div class="flex justify-between items-start mb-4">
+<div class="flex items-center gap-2 text-outline">
+<span class="material-symbols-outlined text-xl">group</span>
+<span class="font-label-caps text-label-caps uppercase">Active Turn</span>
+</div>
+<div class="flex items-center gap-1 text-secondary font-bold text-xs">
+<span class="material-symbols-outlined text-sm">schedule</span>
+                        Drop phase
+                    </div>
+</div>
+<div class="flex justify-between items-end">
+<div>
+<p class="font-label-caps text-[10px] text-outline uppercase tracking-widest mb-1">Current Player</p>
+<h2 class="font-headline-lg text-headline-lg text-primary">Somneel</h2>
+<p class="text-xs text-outline mt-1">Drop a combination or single card</p>
+</div>
+<div class="bg-victory-gold/10 text-victory-gold font-bold px-4 py-2 rounded-xl border border-victory-gold/20">
+                        23 pts
+                    </div>
+</div>
+</div>
+<!-- Round & Timer -->
+<div class="bg-white rounded-2xl p-6 card-shadow border border-outline-variant/30 flex flex-col justify-center">
+<div class="flex items-center justify-around bg-surface-container-low rounded-2xl p-4 border border-outline-variant/20">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">grid_view</span>
+<span class="font-title-md text-title-md">Round 1</span>
+</div>
+<div class="h-8 w-px bg-outline-variant/50 mx-2"></div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">timer</span>
+<span class="font-card-value text-card-value">0:11</span>
+</div>
+<div class="h-8 w-px bg-outline-variant/50 mx-2"></div>
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 bg-victory-gold rounded-full"></span>
+<span class="font-body-base text-sm text-outline">Somneel's turn</span>
+</div>
+</div>
+</div>
+<!-- Deck Remaining -->
+<div class="bg-white rounded-2xl p-6 card-shadow border border-outline-variant/30">
+<div class="flex items-center gap-2 text-outline mb-4">
+<span class="material-symbols-outlined text-xl">layers</span>
+<span class="font-label-caps text-label-caps uppercase">Deck remaining</span>
+</div>
+<div class="flex items-baseline gap-2">
+<span class="font-display-lg text-display-lg text-primary">42</span>
+<span class="text-xs text-outline max-w-[120px] leading-tight">Table cards update live after each drop.</span>
+</div>
+</div>
+</div>
+<!-- Main Game Table -->
+<div class="bg-felt-green rounded-[32px] p-8 border-8 border-primary relative overflow-hidden min-h-[400px] flex items-center justify-center table-inner-glow">
+<!-- Other Player Mini-Card (Somneel) -->
+<div class="absolute top-12 left-12">
+<div class="bg-primary/40 backdrop-blur-md rounded-2xl p-4 border border-victory-gold flex items-center gap-4 w-48 transition-transform hover:scale-105">
+<div class="w-12 h-12 rounded-full bg-action-emerald flex items-center justify-center text-on-primary font-bold shadow-lg">
+                        S
+                    </div>
+<div>
+<div class="flex items-center gap-2">
+<h3 class="text-on-primary font-bold">Somneel</h3>
+<div class="w-2 h-2 bg-victory-gold rounded-full animate-pulse"></div>
+</div>
+<p class="text-on-primary-container text-xs">5 cards</p>
+</div>
+<div class="ml-auto bg-victory-gold text-on-primary text-[10px] font-bold px-2 py-1 rounded-md">
+                        +0
+                    </div>
+</div>
+<!-- Card Slots representation -->
+<div class="flex gap-2 mt-2 ml-1">
+<div class="w-6 h-8 border border-on-primary-container/30 rounded-sm"></div>
+<div class="w-6 h-8 border border-on-primary-container/30 rounded-sm"></div>
+<div class="w-6 h-8 border border-on-primary-container/30 rounded-sm"></div>
+<div class="w-6 h-8 border border-on-primary-container/30 rounded-sm"></div>
+<div class="w-6 h-8 border border-on-primary-container/30 rounded-sm"></div>
+</div>
+</div>
+<!-- Central Table Drop Area -->
+<div class="bg-primary/20 backdrop-blur-sm rounded-[24px] border-2 border-dashed border-on-primary-container/20 w-full max-w-2xl h-64 flex flex-col items-center justify-center relative">
+<div class="absolute top-4 left-6 flex items-center gap-2 text-on-primary-container/60">
+<span class="material-symbols-outlined text-sm">content_copy</span>
+<span class="font-label-caps text-[10px] uppercase tracking-widest">Table Drop</span>
+</div>
+<!-- Dropped Card -->
+<div class="relative transition-all duration-500 transform hover:-translate-y-2 group">
+<div class="bg-white w-24 h-36 rounded-xl shadow-2xl flex flex-col items-center justify-between p-3 border border-outline-variant/30">
+<div class="w-full text-left font-card-value text-headline-lg text-error leading-none">8</div>
+<span class="material-symbols-outlined text-4xl text-error" style="font-variation-settings: 'FILL' 1;">diamond</span>
+<div class="w-full text-right font-card-value text-headline-lg text-error leading-none rotate-180">8</div>
+</div>
+<div class="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap bg-on-surface text-surface text-[10px] px-2 py-1 rounded">
+                        Single - 1 card(s)
+                    </div>
+</div>
+<p class="mt-8 text-on-primary-container/40 text-[10px] max-w-xs text-center uppercase tracking-widest">
+                    Drop a set before drawing from the table.
+                </p>
+</div>
+<!-- Footer indicator in table -->
+<div class="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2 text-on-primary-container/50">
+<span class="material-symbols-outlined text-sm">info</span>
+<span class="text-[10px] tracking-wide">Track card counts, chip movement, and current draw phase.</span>
+</div>
+</div>
+<!-- Player's Hand Container -->
+<div class="bg-white rounded-[24px] p-8 card-shadow border border-outline-variant/30 relative">
+<div class="flex justify-between items-center mb-6">
+<div class="flex items-center gap-4">
+<div class="w-14 h-14 rounded-full bg-secondary flex items-center justify-center text-on-secondary font-bold text-xl shadow-md border-4 border-surface-cream">
+                        S
+                    </div>
+<div>
+<div class="flex items-center gap-2">
+<h2 class="font-title-md text-title-md text-primary">Somneel (You)</h2>
+<span class="material-symbols-outlined text-primary text-sm">verified_user</span>
+</div>
+<p class="text-outline text-sm">Hand total: <span class="font-bold text-primary">5 points</span></p>
+</div>
+</div>
+<div class="text-right">
+<p class="text-xs text-outline leading-tight">Tap cards to build a drop.<br/>Scroll sideways to scan your hand.</p>
+</div>
+</div>
+<!-- Actual Hand -->
+<div class="flex gap-4 mb-8 overflow-x-auto pb-4 scrollbar-hide">
+<!-- Card 2 of Hearts -->
+<div class="flex-shrink-0 cursor-pointer group">
+<div class="bg-white w-24 h-36 rounded-xl shadow-lg border-2 border-outline-variant/20 flex flex-col items-center justify-between p-3 transition-all duration-200 group-hover:-translate-y-4 group-hover:border-victory-gold">
+<div class="w-full text-left font-card-value text-headline-lg text-error leading-none">2</div>
+<span class="material-symbols-outlined text-4xl text-error" style="font-variation-settings: 'FILL' 1;">favorite</span>
+<div class="w-full text-right font-card-value text-headline-lg text-error leading-none rotate-180">2</div>
+</div>
+</div>
+<!-- Card 3 of Spades -->
+<div class="flex-shrink-0 cursor-pointer group">
+<div class="bg-white w-24 h-36 rounded-xl shadow-lg border-2 border-outline-variant/20 flex flex-col items-center justify-between p-3 transition-all duration-200 group-hover:-translate-y-4 group-hover:border-victory-gold">
+<div class="w-full text-left font-card-value text-headline-lg text-on-background leading-none">3</div>
+<span class="material-symbols-outlined text-4xl text-on-background" style="font-variation-settings: 'FILL' 1;">padel</span>
+<div class="w-full text-right font-card-value text-headline-lg text-on-background leading-none rotate-180">3</div>
+</div>
+</div>
+<!-- Empty Card placeholders to emphasize hand size potential -->
+<div class="flex-shrink-0 opacity-20">
+<div class="w-24 h-36 rounded-xl border-2 border-dashed border-outline-variant"></div>
+</div>
+</div>
+<!-- Action Buttons -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+<button class="furious-btn h-14 rounded-2xl bg-loss-crimson text-white font-bold flex items-center justify-center gap-2 shadow-[0_4px_0_0_#9f1239] hover:brightness-110">
+<span class="material-symbols-outlined">front_hand</span>
+                    Call (5)
+                </button>
+<button class="furious-btn h-14 rounded-2xl bg-on-secondary-container/20 text-on-secondary-container font-bold flex items-center justify-center gap-2 border-2 border-on-secondary-container/10">
+<span class="material-symbols-outlined">select_all</span>
+                    Select Cards
+                </button>
+<button class="h-14 rounded-2xl bg-outline-variant/30 text-outline font-bold flex items-center justify-center gap-2 cursor-not-allowed opacity-60" disabled="">
+<span class="material-symbols-outlined">style</span>
+                    Draw from Deck
+                </button>
+</div>
+</div>
+</main>
+<!-- Floating Timer (Your Turn Indicator) -->
+<div class="fixed bottom-6 left-6 z-[60] bg-white rounded-3xl p-4 shadow-2xl border border-outline-variant/30 flex items-center gap-4 transition-transform hover:scale-105">
+<div class="relative w-16 h-16 flex items-center justify-center">
+<svg class="w-full h-full -rotate-90">
+<circle class="text-surface-container-high" cx="32" cy="32" fill="transparent" r="28" stroke="currentColor" stroke-width="4"></circle>
+<circle class="text-action-emerald timer-progress" cx="32" cy="32" fill="transparent" r="28" stroke="currentColor" stroke-width="4"></circle>
+</svg>
+<span class="absolute font-card-value text-headline-lg text-primary">26</span>
+</div>
+<div>
+<div class="flex items-center gap-2 text-action-emerald">
+<span class="material-symbols-outlined text-sm animate-spin-slow">schedule</span>
+<p class="font-bold text-sm">Your turn</p>
+</div>
+<p class="text-[10px] text-outline">Drop a combo or draw to continue.</p>
+</div>
+</div>
+<!-- Bottom Nav Shell (as specified by Shared Components) -->
+<nav class="fixed bottom-0 w-full z-50 flex justify-around items-center px-gutter py-base h-24 bg-surface-cream border-t-4 border-primary shadow-[0_-4px_10px_rgba(0,0,0,0.1)] rounded-t-xl md:hidden">
+<a class="flex flex-col items-center justify-center text-outline p-2" href="#">
+<span class="material-symbols-outlined">check_circle</span>
+<span class="font-label-caps text-label-caps">Ready</span>
+</a>
+<a class="flex flex-col items-center justify-center text-outline p-2" href="#">
+<span class="material-symbols-outlined">record_voice_over</span>
+<span class="font-label-caps text-label-caps">Call</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-action-emerald text-on-primary rounded-xl px-6 py-2 shadow-[0_4px_0_0_#064e3b]" href="#">
+<span class="material-symbols-outlined">vertical_align_bottom</span>
+<span class="font-label-caps text-label-caps">Drop</span>
+</a>
+<a class="flex flex-col items-center justify-center text-outline p-2" href="#">
+<span class="material-symbols-outlined">style</span>
+<span class="font-label-caps text-label-caps">Draw</span>
+</a>
+<a class="flex flex-col items-center justify-center text-outline p-2" href="#">
+<span class="material-symbols-outlined">refresh</span>
+<span class="font-label-caps text-label-caps">New Round</span>
+</a>
+</nav>
+<footer class="mt-12 mb-24 px-container-padding text-center">
+<details class="text-xs text-outline cursor-pointer opacity-50 hover:opacity-100 transition-opacity">
+<summary class="font-bold">Debug utilities</summary>
+<div class="p-4 bg-surface-variant/20 rounded-lg mt-2 text-left space-y-1">
+<p>Client ID: 88291-FF-PROD</p>
+<p>Server Latency: 12ms</p>
+<p>Game Seed: #FF-9B3WPI-G442</p>
+</div>
+</details>
+</footer>
+<script>
+        // Simple micro-interaction for cards
+        document.querySelectorAll('.flex-shrink-0.cursor-pointer').forEach(card => {
+            card.addEventListener('click', () => {
+                card.classList.toggle('-translate-y-8');
+                card.querySelector('.bg-white').classList.toggle('border-victory-gold');
+                card.querySelector('.bg-white').classList.toggle('shadow-2xl');
+            });
+        });
+
+        // Simple countdown logic simulation
+        let timerVal = 26;
+        const timerText = document.querySelector('.fixed.bottom-6 .text-primary');
+        const progressCircle = document.querySelector('.timer-progress');
+        
+        setInterval(() => {
+            if(timerVal > 0) {
+                timerVal--;
+                timerText.innerText = timerVal;
+                // Calculate dashoffset (100 is full, 0 is empty)
+                const offset = (timerVal / 30) * 100;
+                progressCircle.style.strokeDashoffset = 100 - offset;
+            }
+        }, 1000);
+    </script>
+</body></html>

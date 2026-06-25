@@ -4,24 +4,21 @@ import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card } from '@/components/card'; // We can use the Card component we wrote!
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { useGameSocket } from '@/hooks/use-game-socket';
 import {
-  ArrowRight,
-  CopyCheck,
   RotateCcw,
   Sparkles,
+  PlusCircle,
+  UserPlus,
+  GitBranch,
+  CheckCircle2,
+  Layers,
+  BookOpen,
 } from 'lucide-react';
-import {
-  CreateRoomIcon,
-  JoinRoomIcon,
-  RoomCodeIcon,
-  TableFeltIcon,
-  DropCardIcon,
-} from '@/components/icons/Furious5Icons';
 import {
   Accordion,
   AccordionContent,
@@ -132,20 +129,29 @@ export default function Home() {
     }
   };
 
+  const previewCards = [
+    { r: 1, s: 'H' },  // A of Hearts
+    { r: 4, s: 'S' },  // 4 of Spades
+    { r: 4, s: 'C' },  // 4 of Clubs
+    { r: 7, s: 'D' },  // 7 of Diamonds
+    { r: 13, s: 'H' }  // K of Hearts
+  ] as const;
+
   return (
-    <div className="app-backdrop min-h-screen">
-      <div className="mx-auto flex min-h-screen w-full max-w-[1480px] flex-col gap-8 px-4 py-6 sm:px-6 lg:px-10 xl:px-14">
-        <header className="flex flex-col gap-4 border-b border-border pb-5 sm:flex-row sm:items-start sm:justify-between">
-          <div className="flex items-center gap-3">
-            <div className="grid h-12 w-12 place-items-center rounded-lg">
-              <img src="/icons/furious5-app-icon.svg" alt="" className="h-12 w-12" />
+    <div className="bg-felt-green felt-texture min-h-screen text-white select-none flex flex-col">
+      <div className="mx-auto flex min-h-screen w-full max-w-[1480px] flex-col gap-8 px-6 py-6 sm:px-8 lg:px-10 xl:px-14">
+        
+        {/* Premium Header */}
+        <header className="flex flex-col gap-4 border-b border-white/10 pb-5 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex items-center gap-4">
+            <div className="bg-surface-cream p-2.5 rounded-xl shadow-md flex items-center justify-center">
+              <span className="font-display font-extrabold text-3xl tracking-tighter text-victory-gold leading-none">Furious Five</span>
             </div>
             <div>
               <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-4xl font-semibold sm:text-5xl">Furious Five</h1>
-                <Badge variant="outline" className="h-6 border-primary/25 bg-primary/5 text-primary">Live table</Badge>
+                <Badge className="h-6 border-action-emerald/25 bg-action-emerald/20 text-action-emerald font-semibold uppercase tracking-wider text-[10px]">Live table</Badge>
               </div>
-              <p className="mt-1 max-w-2xl text-sm text-muted-foreground sm:text-base">
+              <p className="mt-1.5 max-w-2xl text-xs sm:text-sm text-white/70">
                 A fast room-based card table for sharp reads, clean drops, and tense calls under five points.
               </p>
             </div>
@@ -156,7 +162,7 @@ export default function Home() {
               size="sm"
               onClick={handleReset}
               data-testid="button-reset-app"
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 bg-white/5 border-white/20 text-white hover:bg-white/10 hover:text-white rounded-xl"
             >
               <RotateCcw className="h-4 w-4" />
               Reset app
@@ -165,183 +171,196 @@ export default function Home() {
           </div>
         </header>
 
+        {/* Main Content Layout */}
         <main className="grid flex-1 items-start gap-8 xl:grid-cols-[minmax(520px,0.86fr)_minmax(620px,1.14fr)]">
           <div className="flex max-w-[680px] flex-col gap-6 xl:max-w-none">
+            
+            {/* Create & Join private rooms */}
             <motion.div
               className="grid gap-5 md:grid-cols-2"
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.22 }}
             >
-              <Card className="h-full">
-                <CardHeader className="space-y-2">
-                  <CardTitle className="flex items-center gap-2 text-xl">
-                    <CreateRoomIcon className="h-5 w-5 text-primary" />
+              {/* Create Room */}
+              <div className="glass-card border border-white/25 rounded-2xl shadow-2xl p-6 sm:p-8 flex flex-col justify-between h-full gap-4 text-foreground">
+                <div>
+                  <h2 className="flex items-center gap-2 text-xl font-display font-extrabold text-primary">
+                    <PlusCircle className="h-5 w-5 text-victory-gold" />
                     Create a room
-                  </CardTitle>
-                  <CardDescription>Host a private table and invite players with a room code.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <Label htmlFor="create-name">Your name</Label>
+                  </h2>
+                  <p className="text-xs text-muted-foreground mt-1">Host a private table and invite players with a room code.</p>
+                </div>
+                <div className="space-y-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="create-name" className="text-primary font-mono text-[10px] font-bold uppercase tracking-widest">Your name</Label>
                     <Input
                       id="create-name"
                       placeholder="Enter your name"
                       value={playerName}
                       onChange={(event) => setPlayerName(event.target.value)}
                       data-testid="input-player-name"
+                      className="bg-white border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-primary focus-visible:border-primary font-mono rounded-xl"
                     />
                   </div>
 
                   {!roomCode ? (
-                    <Button
-                      className="w-full"
+                    <button
                       onClick={handleCreateRoom}
                       disabled={!playerName.trim()}
                       data-testid="button-create-room"
-                      size="lg"
+                      className="w-full chunky-button bg-action-emerald hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed text-white font-display font-bold py-3.5 rounded-xl shadow-[0_4px_0_0_#064e3b] transition-all flex items-center justify-center gap-2"
                     >
-                      <CreateRoomIcon className="h-4 w-4" />
+                      <PlusCircle className="h-5 w-5" />
                       Create room
-                      <ArrowRight className="h-4 w-4" />
-                    </Button>
+                    </button>
                   ) : (
-                    <div className="space-y-3 rounded-lg border border-primary/30 bg-primary/10 p-4 text-center">
-                      <div className="text-xs font-semibold uppercase text-primary">Room created</div>
-                      <div className="font-mono text-xl font-semibold text-primary">{roomCode}</div>
-                      <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                        <Sparkles className="h-4 w-4" />
+                    <div className="space-y-2 rounded-xl border border-action-emerald/30 bg-action-emerald/10 p-4 text-center">
+                      <div className="text-[10px] font-mono font-bold uppercase tracking-widest text-action-emerald">Room created</div>
+                      <div className="font-display text-xl font-bold tracking-widest text-primary">{roomCode}</div>
+                      <div className="flex items-center justify-center gap-2 text-xs text-primary/70">
+                        <Sparkles className="h-3 w-3 text-victory-gold animate-spin-slow" />
                         Joining lobby...
                       </div>
                     </div>
                   )}
-                </CardContent>
-              </Card>
+                </div>
+              </div>
 
-              <Card className="h-full">
-                <CardHeader className="space-y-2">
-                  <CardTitle className="flex items-center gap-2 text-xl">
-                    <JoinRoomIcon className="h-5 w-5 text-primary" />
+              {/* Join Room */}
+              <div className="glass-card border border-white/25 rounded-2xl shadow-2xl p-6 sm:p-8 flex flex-col justify-between h-full gap-4 text-foreground">
+                <div>
+                  <h2 className="flex items-center gap-2 text-xl font-display font-extrabold text-primary">
+                    <UserPlus className="h-5 w-5 text-victory-gold" />
                     Join a room
-                  </CardTitle>
-                  <CardDescription>Enter a code from your host and land in the lobby.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <Label htmlFor="join-name">Your name</Label>
+                  </h2>
+                  <p className="text-xs text-muted-foreground mt-1">Enter a code from your host and land in the lobby.</p>
+                </div>
+                <div className="space-y-4">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="join-name" className="text-primary font-mono text-[10px] font-bold uppercase tracking-widest">Your name</Label>
                     <Input
                       id="join-name"
                       placeholder="Enter your name"
                       value={playerName}
                       onChange={(event) => setPlayerName(event.target.value)}
                       data-testid="input-join-name"
+                      className="bg-white border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-primary focus-visible:border-primary font-mono rounded-xl"
                     />
                   </div>
-                  <div>
-                    <Label htmlFor="room-code">Room code</Label>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="room-code" className="text-primary font-mono text-[10px] font-bold uppercase tracking-widest">Room code</Label>
                     <Input
                       id="room-code"
                       placeholder="FF-XXXXXX"
                       value={joinRoomCode}
                       onChange={(event) => setJoinRoomCode(event.target.value.toUpperCase())}
                       data-testid="input-room-code"
+                      className="bg-white border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-primary focus-visible:border-primary font-mono rounded-xl tracking-widest"
                     />
                   </div>
-                  <Button
-                    className="w-full"
+                  <button
                     onClick={handleJoinRoom}
                     disabled={!playerName.trim() || !joinRoomCode.trim()}
                     data-testid="button-join-room"
-                    size="lg"
+                    className="w-full chunky-button bg-action-emerald hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed text-white font-display font-bold py-3.5 rounded-xl shadow-[0_4px_0_0_#064e3b] transition-all flex items-center justify-center gap-2"
                   >
-                    <JoinRoomIcon className="h-4 w-4" />
+                    <UserPlus className="h-5 w-5" />
                     Join room
-                  </Button>
-                </CardContent>
-              </Card>
+                  </button>
+                </div>
+              </div>
             </motion.div>
 
-            <section className="table-panel p-5">
-              <div className="flex items-center gap-2 text-sm font-semibold">
-                <RoomCodeIcon className="h-4 w-4 text-primary" />
+            {/* Table Flow */}
+            <section className="bg-white/5 border border-white/10 rounded-2xl p-6 text-white shadow-sm">
+              <div className="flex items-center gap-2 text-sm font-bold tracking-wider font-mono uppercase text-victory-gold">
+                <GitBranch className="h-5 w-5 text-victory-gold" />
                 Table flow
               </div>
-              <Separator className="my-4" />
-              <div className="grid gap-4 text-sm text-muted-foreground sm:grid-cols-2">
+              <Separator className="my-4 bg-white/10" />
+              <div className="grid gap-4 text-xs sm:text-sm text-white/70 sm:grid-cols-2">
                 <p className="flex items-start gap-2">
-                  <CopyCheck className="mt-0.5 h-4 w-4 text-primary" />
-                  Share the generated room code so friends can jump straight into your lobby.
+                  <CheckCircle2 className="h-4 w-4 text-action-emerald shrink-0 mt-0.5" />
+                  <span>Share the generated room code so friends can jump straight into your lobby.</span>
                 </p>
                 <p className="flex items-start gap-2">
-                  <DropCardIcon className="mt-0.5 h-4 w-4 text-primary" />
-                  Drop combinations to lower your total, then call before the table catches up.
+                  <CheckCircle2 className="h-4 w-4 text-action-emerald shrink-0 mt-0.5" />
+                  <span>Drop combinations to lower your total, then call before the table catches up.</span>
                 </p>
               </div>
             </section>
           </div>
 
           <aside className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px] xl:grid-cols-1">
-            <div className="felt-surface felt-ring relative flex min-h-[440px] items-center justify-center p-6 text-white lg:min-h-[460px] xl:min-h-[560px]">
+            {/* Real Felt Surface Preview */}
+            <div className="bg-felt-green rounded-[24px] p-6 border-4 border-primary relative overflow-hidden min-h-[360px] flex items-center justify-center table-inner-glow felt-texture text-white shadow-lg">
               <div className="relative z-10 grid w-full max-w-xl gap-5">
-                <div className="flex items-center justify-between text-xs font-semibold uppercase text-white/70">
-                  <span className="flex items-center gap-2"><TableFeltIcon className="h-4 w-4" /> Table preview</span>
+                <div className="flex items-center justify-between text-[10px] font-mono font-bold uppercase tracking-widest text-white/60">
+                  <span className="flex items-center gap-2">
+                    <Layers className="h-4 w-4 text-victory-gold" />
+                    Table preview
+                  </span>
                   <span>2-5 players</span>
                 </div>
-                <div className="rounded-lg border border-white/15 bg-black/20 p-6 shadow-2xl">
+                
+                <div className="rounded-2xl border border-white/15 bg-black/20 p-6 shadow-2xl">
+                  {/* Render actual card views */}
                   <div className="mb-6 flex justify-center gap-3">
-                    {['A', '4', '4', '7', 'K'].map((rank, index) => (
-                      <div key={`${rank}-${index}`} className="grid h-28 w-20 place-items-center rounded-md border border-zinc-200 bg-white text-2xl font-bold text-zinc-950 shadow-xl">
-                        {rank}
-                      </div>
+                    {previewCards.map((card, index) => (
+                      <Card 
+                        key={index} 
+                        card={card} 
+                        size="sm" 
+                        className="shadow-xl transform rotate-2 hover:rotate-0 hover:scale-105 transition-transform duration-200" 
+                      />
                     ))}
                   </div>
+                  
                   <div className="grid grid-cols-3 gap-3 text-center text-xs">
-                    <div className="rounded-md bg-white/10 px-3 py-4">
-                      <div className="font-semibold text-white">Drop</div>
-                      <div className="text-white/60">Pair / straight</div>
+                    <div className="rounded-xl bg-white/5 p-3 border border-white/10">
+                      <div className="font-bold text-victory-gold uppercase text-[10px] font-mono tracking-wider">Drop</div>
+                      <div className="text-white/60 text-[10px] mt-1">Pair / straight</div>
                     </div>
-                    <div className="rounded-md bg-white/10 px-3 py-4">
-                      <div className="font-semibold text-white">Draw</div>
-                      <div className="text-white/60">Deck / table</div>
+                    <div className="rounded-xl bg-white/5 p-3 border border-white/10">
+                      <div className="font-bold text-victory-gold uppercase text-[10px] font-mono tracking-wider">Draw</div>
+                      <div className="text-white/60 text-[10px] mt-1">Deck / table</div>
                     </div>
-                    <div className="rounded-md bg-white/10 px-3 py-4">
-                      <div className="font-semibold text-white">Call</div>
-                      <div className="text-white/60">Under five</div>
+                    <div className="rounded-xl bg-white/5 p-3 border border-white/10">
+                      <div className="font-bold text-victory-gold uppercase text-[10px] font-mono tracking-wider">Call</div>
+                      <div className="text-white/60 text-[10px] mt-1">Under 5 points</div>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            <section className="table-panel p-5">
-              <h2 className="flex items-center gap-2 text-base font-semibold">
-                <Sparkles className="h-4 w-4 text-accent" />
+            {/* Learn the table panel */}
+            <section className="bg-white/5 border border-white/10 rounded-2xl p-6 text-white shadow-sm">
+              <h2 className="flex items-center gap-2 text-base font-bold text-victory-gold">
+                <BookOpen className="h-5 w-5 text-victory-gold" />
                 Learn the table
               </h2>
               <Accordion type="single" collapsible className="mt-3">
-                <AccordionItem value="rules">
-                  <AccordionTrigger className="text-left text-sm font-semibold text-foreground">
+                <AccordionItem value="rules" className="border-white/10">
+                  <AccordionTrigger className="text-left text-sm font-semibold text-white/90 hover:no-underline hover:text-victory-gold transition-colors">
                     Basic rules
                   </AccordionTrigger>
-                  <AccordionContent>
-                    <ul className="space-y-2 text-sm text-muted-foreground">
-                      <li>Each player starts with five cards.</li>
-                      <li>Goal: bring your hand total under five points.</li>
-                      <li>Card values: A=1, 2-10 face value, J=11, Q=12, K=13.</li>
-                      <li>Call when your total drops below five to trigger settlement.</li>
-                    </ul>
+                  <AccordionContent className="text-white/70 text-xs leading-relaxed space-y-2 pt-2">
+                    <p>• Each player starts with five cards.</p>
+                    <p>• Goal: bring your hand total under five points.</p>
+                    <p>• Card values: A=1, 2-10 face value, J=11, Q=12, K=13.</p>
+                    <p>• Call when your total drops below five to trigger settlement.</p>
                   </AccordionContent>
                 </AccordionItem>
-                <AccordionItem value="plays">
-                  <AccordionTrigger className="text-left text-sm font-semibold text-foreground">
+                <AccordionItem value="plays" className="border-b-0">
+                  <AccordionTrigger className="text-left text-sm font-semibold text-white/90 hover:no-underline hover:text-victory-gold transition-colors">
                     Valid drops
                   </AccordionTrigger>
-                  <AccordionContent>
-                    <ul className="space-y-2 text-sm text-muted-foreground">
-                      <li>Single: any individual card.</li>
-                      <li>Pair, trips, and quads: same-rank sets.</li>
-                      <li>Straight: three or more consecutive ranks.</li>
-                    </ul>
+                  <AccordionContent className="text-white/70 text-xs leading-relaxed space-y-2 pt-2">
+                    <p>• Single: any individual card.</p>
+                    <p>• Pair, trips, and quads: same-rank sets.</p>
+                    <p>• Straight: three or more consecutive ranks.</p>
                   </AccordionContent>
                 </AccordionItem>
               </Accordion>

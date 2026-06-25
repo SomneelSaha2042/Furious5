@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import { TimerIcon } from '@/components/icons/Furious5Icons';
+import { Clock } from 'lucide-react';
 
 interface TurnTimerProps {
   isActive: boolean;
@@ -34,7 +34,7 @@ export function TurnTimer({ isActive, duration = 30, onTimeout }: TurnTimerProps
   }, [isActive, duration, onTimeout]);
 
   const urgency = timeLeft <= Math.max(5, duration * 0.25);
-  const radius = 36;
+  const radius = 28;
   const circumference = 2 * Math.PI * radius;
   const offset = useMemo(
     () => ((duration - timeLeft) / duration) * circumference,
@@ -47,62 +47,62 @@ export function TurnTimer({ isActive, duration = 30, onTimeout }: TurnTimerProps
         <motion.div
           key="turn-timer"
           data-testid="turn-timer"
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 24 }}
+          initial={{ opacity: 0, y: 24, scale: 0.95 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: 24, scale: 0.95 }}
           transition={{ type: 'spring', stiffness: 320, damping: 28 }}
           className={cn(
-            'fixed bottom-4 left-4 z-50 flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3 shadow-lg',
-            urgency && 'border-destructive/60'
+            'fixed bottom-6 left-6 z-[60] bg-white rounded-3xl p-4 shadow-2xl border border-outline-variant/30 flex items-center gap-4 transition-transform hover:scale-105 text-foreground',
+            urgency && 'border-loss-crimson/50'
           )}
         >
-          <motion.div
-            className={cn(
-              'grid place-items-center rounded-full border-2 p-2',
-              urgency ? 'border-destructive/70 bg-destructive/10' : 'border-primary/60 bg-primary/10'
-            )}
-            animate={{ scale: urgency ? [1, 1.05, 1] : 1 }}
-            transition={{ repeat: urgency ? Infinity : 0, duration: 1.2 }}
-          >
-            <svg width="88" height="88" viewBox="0 0 88 88" className="text-muted-foreground">
+          {/* Circular Progress Container */}
+          <div className="relative w-16 h-16 flex items-center justify-center">
+            <svg width="64" height="64" viewBox="0 0 64 64" className="-rotate-90">
               <circle
-                cx="44"
-                cy="44"
+                cx="32"
+                cy="32"
                 r={radius}
-                stroke="var(--muted)"
-                strokeWidth="6"
+                stroke="#edeeef" // surface-container-high
+                strokeWidth="4"
                 fill="transparent"
               />
               <motion.circle
-                cx="44"
-                cy="44"
+                cx="32"
+                cy="32"
                 r={radius}
-                stroke={urgency ? 'var(--destructive)' : 'var(--primary)'}
-                strokeWidth="6"
+                stroke={urgency ? 'var(--loss-crimson)' : 'var(--action-emerald)'}
+                strokeWidth="4"
                 fill="transparent"
                 strokeDasharray={circumference}
                 strokeDashoffset={offset}
                 strokeLinecap="round"
+                transition={{ duration: 0.2 }}
               />
             </svg>
-            <span className="absolute text-xl font-bold" data-testid="timer-seconds">
+            <span 
+              className={cn(
+                "absolute font-mono text-xl font-bold",
+                urgency ? "text-loss-crimson" : "text-primary"
+              )} 
+              data-testid="timer-seconds"
+            >
               {timeLeft}
             </span>
-          </motion.div>
+          </div>
 
-          <div className="flex flex-col">
-            <div className="flex items-center gap-2 text-sm font-semibold">
-              <TimerIcon className={cn('h-4 w-4', urgency ? 'text-destructive' : 'text-primary')} />
-              <span className={urgency ? 'text-destructive' : 'text-foreground'}>Your turn</span>
+          {/* Details Column */}
+          <div>
+            <div className={cn(
+              "flex items-center gap-2 font-bold text-sm",
+              urgency ? "text-loss-crimson animate-pulse" : "text-action-emerald"
+            )}>
+              <Clock className="h-4 w-4 animate-pulse text-victory-gold" />
+              <span>Your turn</span>
             </div>
-            <p className="text-xs text-muted-foreground">
-              {urgency ? 'Make a play before time runs out.' : 'Drop a combo or draw to continue.'}
+            <p className="text-[10px] text-muted-foreground">
+              {urgency ? 'Make a play before time runs out!' : 'Drop a combo or draw to continue.'}
             </p>
-            <div
-              data-testid="timer-progress"
-              className="sr-only"
-              style={{ width: `${(timeLeft / duration) * 100}%` }}
-            />
           </div>
         </motion.div>
       )}

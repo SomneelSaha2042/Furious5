@@ -1,20 +1,22 @@
 import { useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Users, Sparkles } from 'lucide-react';
 import { Card } from './card';
 import { PlayerHand } from './player-hand';
 import { TurnTimer } from './turn-timer';
-import { RoundCounter } from './round-counter';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { GameState, Player, Card as CardType } from '@shared/game-types';
 import { canDrawFromTable, sumPoints, sortCardsForDisplay } from '@shared/game-engine';
 import {
-  DeckIcon,
-  DrawCardIcon,
-  DropCardIcon,
-  TimerIcon,
-} from '@/components/icons/Furious5Icons';
+  Users,
+  Clock,
+  LayoutGrid,
+  Timer,
+  Layers,
+  Copy,
+  ArrowDown,
+  Info,
+} from 'lucide-react';
 
 interface GameTableViewProps {
   gameState: GameState;
@@ -41,10 +43,10 @@ function formatCardLabel(card: CardType) {
   })();
 
   const suit = {
-    H: '\u2665',
-    D: '\u2666',
-    C: '\u2663',
-    S: '\u2660',
+    H: '♥',
+    D: '♦',
+    C: '♣',
+    S: '♠',
   }[card.s];
 
   return `${rank}${suit}`;
@@ -77,192 +79,223 @@ export function GameTableView({
     return rotated.filter(player => player.id !== playerId);
   }, [gameState.players, playerId]);
 
-  const leftOpponents = opponents.filter((_, index) => index % 2 === 0);
-  const rightOpponents = opponents.filter((_, index) => index % 2 === 1);
-
   const dropKindLabel = (kind: string) => {
     switch (kind) {
-      case 'single':
-        return 'Single';
-      case 'pair':
-        return 'Pair';
-      case 'trips':
-        return 'Triple';
-      case 'quads':
-        return 'Quad';
-      case 'straight':
-        return 'Straight';
-      default:
-        return 'Set';
+      case 'single': return 'Single';
+      case 'pair': return 'Pair';
+      case 'trips': return 'Triple';
+      case 'quads': return 'Quad';
+      case 'straight': return 'Straight';
+      default: return 'Set';
     }
   };
 
+  const opponentPositions = [
+    "absolute top-6 left-6 sm:top-10 sm:left-10",
+    "absolute top-6 right-6 sm:top-10 sm:right-10",
+    "absolute top-6 left-1/2 -translate-x-1/2",
+    "absolute bottom-6 left-6 sm:bottom-10 sm:left-10",
+  ];
+
   return (
     <div className="flex flex-col gap-6 lg:gap-8">
-      <header className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.2fr)_auto_minmax(0,.8fr)] items-stretch">
+      {/* Stats Row */}
+      <header className="grid gap-6 md:grid-cols-3 items-stretch">
+        {/* Active Turn */}
         <motion.div
-          className="table-panel flex flex-col gap-3 p-4"
+          className="bg-white rounded-2xl p-6 card-shadow border border-outline-variant/30 relative overflow-hidden text-foreground"
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.18 }}
         >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-sm">
-              <Users className="h-4 w-4 text-primary" />
-              <span className="text-muted-foreground">Active Turn</span>
+          <div className="flex justify-between items-start mb-4">
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Users className="h-5 w-5 text-muted-foreground" />
+              <span className="font-mono text-xs font-bold uppercase tracking-widest">Active Turn</span>
             </div>
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <TimerIcon className="h-4 w-4" />
+            <div className="flex items-center gap-1 text-secondary font-bold text-xs">
+              <Clock className="h-4 w-4 text-secondary" />
               <span>{gameState.turnStage === 'dropped' ? 'Draw phase' : 'Drop phase'}</span>
             </div>
           </div>
-          <div className="flex items-center justify-between">
+          <div className="flex justify-between items-end">
             <div>
-              <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Current Player</p>
-              <p className="text-lg font-semibold" data-testid="current-turn-player">
-                {currentTurnPlayer?.name ?? 'Waiting for players'}
-              </p>
+              <p className="font-mono text-[10px] text-muted-foreground uppercase tracking-widest mb-1">Current Player</p>
+              <h2 className="font-display text-2xl font-bold text-primary" data-testid="current-turn-player">
+                {currentTurnPlayer?.name ?? 'Waiting'}
+              </h2>
+              <p className="text-xs text-muted-foreground mt-1">{TURN_STAGE_COPY[gameState.turnStage]}</p>
             </div>
-            <div className={cn('chip-stack px-3 py-1 text-xs text-mono', !currentTurnPlayer && 'opacity-0')}>
-              <span>{currentTurnPlayer ? sumPoints(currentTurnPlayer.hand) : '--'} pts</span>
-            </div>
+            {currentTurnPlayer && (
+              <div className="bg-victory-gold/10 text-victory-gold font-bold px-4 py-2 rounded-xl border border-victory-gold/20 font-mono">
+                {sumPoints(currentTurnPlayer.hand)} pts
+              </div>
+            )}
           </div>
-          <p className="text-xs text-muted-foreground leading-5">
-            {TURN_STAGE_COPY[gameState.turnStage]}
-          </p>
         </motion.div>
 
+        {/* Round & Timer */}
         <motion.div
-          className="table-panel flex items-center justify-center p-2"
+          className="bg-white rounded-2xl p-6 card-shadow border border-outline-variant/30 flex flex-col justify-center text-foreground"
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1, duration: 0.2 }}
         >
-          <RoundCounter
-            roundNumber={gameState.roundNumber}
-            gameStartTime={gameState.gameStartTime}
-            currentPlayer={currentTurnPlayer?.name}
-            totalPlayers={gameState.players.length}
-          />
+          <div className="flex items-center justify-around bg-muted rounded-2xl p-4 border border-border">
+            <div className="flex items-center gap-2">
+              <LayoutGrid className="h-5 w-5 text-primary" />
+              <span className="font-display font-bold text-primary">Round {gameState.roundNumber}</span>
+            </div>
+            <div className="h-8 w-px bg-border mx-2" />
+            <div className="flex items-center gap-2">
+              <Timer className="h-5 w-5 text-primary" />
+              <span className="font-mono font-bold text-primary">Active</span>
+            </div>
+            <div className="h-8 w-px bg-border mx-2" />
+            <div className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 bg-victory-gold rounded-full animate-pulse" />
+              <span className="font-display text-xs text-primary font-semibold">{currentTurnPlayer?.name || 'Player'}</span>
+            </div>
+          </div>
         </motion.div>
 
+        {/* Deck Remaining */}
         <motion.div
-          className="table-panel flex flex-col justify-between gap-2 p-4"
+          className="bg-white rounded-2xl p-6 card-shadow border border-outline-variant/30 text-foreground"
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.12, duration: 0.2 }}
         >
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <DeckIcon className="h-4 w-4" />
-            <span>Deck remaining</span>
+          <div className="flex items-center gap-2 text-muted-foreground mb-4">
+            <Layers className="h-5 w-5 text-muted-foreground" />
+            <span className="font-mono text-xs font-bold uppercase tracking-widest">Deck remaining</span>
           </div>
-          <div className="flex items-end justify-between">
-            <span className="text-3xl font-semibold" data-testid="deck-count">
+          <div className="flex items-baseline gap-2">
+            <span className="font-display text-4xl font-extrabold text-primary" data-testid="deck-count">
               {gameState.deck.length}
             </span>
-            <div className="text-right text-xs text-muted-foreground">
-              <p>Table cards update live after each drop.</p>
-            </div>
+            <span className="text-xs text-muted-foreground max-w-[120px] leading-tight">Table cards update live after each drop.</span>
           </div>
         </motion.div>
       </header>
 
-      <section className="felt-surface felt-readable felt-ring relative p-4 sm:p-6 lg:p-8">
-        <div className="relative z-10 flex flex-col gap-6">
-          <div className="lg:hidden flex flex-col gap-4">
-            <div className="flex items-stretch gap-3 overflow-x-auto pb-2">
-              <AnimatePresence>
-                {opponents.map((player, index) => {
-                  const isCurrentTurn = currentTurnPlayer?.id === player.id;
-                  return (
-                    <motion.div
-                      key={player.id}
-                      className={cn(
-                        'min-w-[220px] flex-shrink-0 rounded-lg border border-white/15 bg-black/25 p-3 shadow-lg',
-                        isCurrentTurn && 'ring-2 ring-accent shadow-lg'
-                      )}
-                      initial={{ opacity: 0, y: 12 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -12 }}
-                      transition={{ delay: index * 0.04 }}
-                    >
-                      <PlayerBadge player={player} isCurrentTurn={isCurrentTurn} index={index} />
-                    </motion.div>
-                  );
-                })}
-              </AnimatePresence>
-            </div>
-
-            <TableDropPanel
-              className="rounded-lg border border-white/10 p-4 sm:p-6"
-              tableDrop={gameState.tableDrop}
-              dropKindLabel={dropKindLabel}
-              formatCardLabel={formatCardLabel}
-              canDrawFromTableNow={canDrawFromTableNow}
-              isMyTurn={isMyTurn}
-              turnStage={gameState.turnStage}
-              onDrawFromTable={onDrawFromTable}
-            />
-          </div>
-
-          <div className="hidden lg:grid grid-cols-[minmax(0,220px)_minmax(0,1fr)_minmax(0,220px)] items-start gap-4">
-            <div className="flex flex-col gap-4">
-              {leftOpponents.map((player, index) => (
-                <motion.div
-                  key={player.id}
-                  className={cn(
-                    'rounded-lg border border-white/15 bg-black/25 p-4 shadow-lg',
-                    currentTurnPlayer?.id === player.id && 'ring-2 ring-accent shadow-lg'
+      {/* Main Game Table (Green Felt Area) */}
+      <section className="bg-felt-green rounded-[32px] p-6 sm:p-8 border-8 border-primary relative overflow-hidden min-h-[460px] flex items-center justify-center table-inner-glow felt-texture text-white shadow-2xl">
+        
+        {/* Opponents Mini-Cards */}
+        <AnimatePresence>
+          {opponents.map((player, index) => {
+            const posClass = opponentPositions[index % opponentPositions.length];
+            const isCurrentTurn = currentTurnPlayer?.id === player.id;
+            return (
+              <motion.div 
+                key={player.id} 
+                className={posClass}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                transition={{ duration: 0.2 }}
+              >
+                <div className={cn(
+                  "bg-primary/45 backdrop-blur-md rounded-2xl p-3 sm:p-4 border flex items-center gap-3 sm:gap-4 w-44 sm:w-48 transition-transform hover:scale-105 shadow-lg",
+                  isCurrentTurn ? "border-victory-gold" : "border-white/10"
+                )}>
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-action-emerald flex items-center justify-center text-white font-bold shadow-lg text-lg">
+                    {player.name[0]?.toUpperCase() || '?'}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <h3 className="text-white font-bold text-xs sm:text-sm truncate">{player.name}</h3>
+                      {isCurrentTurn && <div className="w-2 h-2 bg-victory-gold rounded-full animate-pulse flex-shrink-0" />}
+                    </div>
+                    <p className="text-white/60 text-[10px] sm:text-xs">{player.hand.length} card{player.hand.length === 1 ? '' : 's'}</p>
+                  </div>
+                  <div className="ml-auto bg-victory-gold text-primary font-mono text-[10px] font-bold px-2 py-1 rounded-md flex-shrink-0">
+                    {player.chipDelta >= 0 ? '+' : ''}{player.chipDelta}
+                  </div>
+                </div>
+                {/* Mini card back indicators */}
+                <div className="flex gap-1 mt-2 ml-1">
+                  {Array.from({ length: Math.min(player.hand.length, 6) }).map((_, cardIdx) => (
+                    <div key={cardIdx} className="w-5 h-7 sm:w-6 sm:h-8 border border-white/20 rounded-sm bg-white/10" />
+                  ))}
+                  {player.hand.length > 6 && (
+                    <span className="text-[10px] text-white/50 ml-1 font-bold">+{player.hand.length - 6}</span>
                   )}
-                  initial={{ opacity: 0, x: -18 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                >
-                  <PlayerBadge player={player} isCurrentTurn={currentTurnPlayer?.id === player.id} index={index} />
-                </motion.div>
-              ))}
-            </div>
+                </div>
+              </motion.div>
+            );
+          })}
+        </AnimatePresence>
 
-            <TableDropPanel
-              className="rounded-lg border border-white/10 p-4 sm:p-6"
-              tableDrop={gameState.tableDrop}
-              dropKindLabel={dropKindLabel}
-              formatCardLabel={formatCardLabel}
-              canDrawFromTableNow={canDrawFromTableNow}
-              isMyTurn={isMyTurn}
-              turnStage={gameState.turnStage}
-              onDrawFromTable={onDrawFromTable}
-            />
+        {/* Central Table Drop Area */}
+        <div className="bg-primary/20 backdrop-blur-sm rounded-[24px] border-2 border-dashed border-white/20 w-full max-w-xl min-h-[16rem] p-6 flex flex-col items-center justify-center relative">
+          <div className="absolute top-4 left-6 flex items-center gap-2 text-white/60">
+            <Copy className="h-4 w-4" />
+            <span className="font-mono text-[10px] uppercase tracking-widest">Table Drop</span>
+          </div>
 
-            <div className="flex flex-col gap-4">
-              {rightOpponents.map((player, index) => (
+          <div className="flex min-h-[120px] flex-col items-center justify-center gap-4 py-8">
+            <AnimatePresence initial={false}>
+              {gameState.tableDrop ? (
                 <motion.div
-                  key={player.id}
-                  className={cn(
-                    'rounded-lg border border-white/15 bg-black/25 p-4 shadow-lg',
-                    currentTurnPlayer?.id === player.id && 'ring-2 ring-accent shadow-lg'
-                  )}
-                  initial={{ opacity: 0, x: 18 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.05 }}
+                  key={gameState.tableDrop.cards.map(card => `${card.r}-${card.s}`).join('-')}
+                  className="flex flex-wrap justify-center gap-3"
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -12 }}
                 >
-                  <PlayerBadge
-                    player={player}
-                    isCurrentTurn={currentTurnPlayer?.id === player.id}
-                    index={index + leftOpponents.length}
-                  />
+                  {sortCardsForDisplay(gameState.tableDrop.cards, gameState.tableDrop.kind).map((card, index) => (
+                    <Card key={`${card.r}-${card.s}-${index}`} card={card} size="md" />
+                  ))}
                 </motion.div>
-              ))}
-            </div>
+              ) : (
+                <motion.div
+                  key="empty-table"
+                  className="text-center text-white/40 space-y-2"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 0.85 }}
+                >
+                  <Layers className="h-12 w-12 block mx-auto text-white/20" />
+                  <p className="text-[10px] uppercase tracking-widest max-w-[200px] mx-auto">
+                    Drop a set before drawing from the table.
+                  </p>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
-          <div className="flex items-center gap-3 text-xs text-muted-foreground">
-            <Sparkles className="h-4 w-4" />
-            <span>Track card counts, chip movement, and the current draw phase without leaving the table.</span>
-          </div>
+          {/* Table Cards Draw Buttons */}
+          {gameState.tableDrop && canDrawFromTableNow && (
+            <div className="absolute bottom-4 flex flex-wrap justify-center gap-2 w-full px-4">
+              {gameState.tableDrop.cards.map((card, originalIndex) => {
+                if (!canDrawFromTable(gameState.tableDrop!, originalIndex)) return null;
+
+                return (
+                  <Button
+                    key={`${card.r}-${card.s}-${originalIndex}`}
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onDrawFromTable(originalIndex)}
+                    data-testid={`button-draw-table-${originalIndex}`}
+                    className="bg-white/10 hover:bg-white/20 border-white/20 text-white font-bold flex items-center gap-1.5 text-xs py-1 px-3 rounded-lg"
+                  >
+                    <ArrowDown className="h-3 w-3" />
+                    Take {formatCardLabel(card)}
+                  </Button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 text-white/40">
+          <Info className="h-4 w-4" />
+          <span className="text-[10px] tracking-wide">Track card counts, chip movement, and current draw phase.</span>
         </div>
       </section>
 
+      {/* Player's Hand Panel */}
       {currentPlayer && (
         <PlayerHand
           gameState={gameState}
@@ -273,6 +306,7 @@ export function GameTableView({
         />
       )}
 
+      {/* Floating Timer */}
       <TurnTimer
         isActive={isMyTurn && gameState.turnStage === 'start'}
         duration={30}
@@ -284,161 +318,6 @@ export function GameTableView({
           }
         }}
       />
-    </div>
-  );
-}
-
-interface TableDropPanelProps {
-  tableDrop: GameState['tableDrop'];
-  dropKindLabel: (kind: string) => string;
-  formatCardLabel: (card: CardType) => string;
-  canDrawFromTableNow: boolean;
-  isMyTurn: boolean;
-  turnStage: GameState['turnStage'];
-  onDrawFromTable: (cardIndex: number) => void;
-  className?: string;
-}
-
-function TableDropPanel({
-  tableDrop,
-  dropKindLabel,
-  formatCardLabel,
-  canDrawFromTableNow,
-  isMyTurn,
-  turnStage,
-  onDrawFromTable,
-  className,
-}: TableDropPanelProps) {
-  return (
-    <motion.div
-      className={cn('rounded-lg border border-white/20 bg-black/30 p-4 text-white shadow-2xl sm:p-6', className)}
-      initial={{ scale: 0.96, opacity: 0 }}
-      animate={{ scale: 1, opacity: 1 }}
-      transition={{ duration: 0.22 }}
-    >
-      <div className="mb-3 flex items-center justify-between">
-        <div className="flex items-center gap-2 text-emerald-50/80">
-          <DropCardIcon className="h-4 w-4" />
-          <span className="heading-subtle text-xs">Table Drop</span>
-        </div>
-        {tableDrop && (
-          <span className="text-xs text-emerald-50/70">
-            {dropKindLabel(tableDrop.kind)} - {tableDrop.cards.length} card(s)
-          </span>
-        )}
-      </div>
-
-      <div className="flex min-h-[120px] flex-col items-center justify-center gap-4">
-        <AnimatePresence initial={false}>
-          {tableDrop ? (
-            <motion.div
-              key={tableDrop.cards.map(card => `${card.r}-${card.s}`).join('-')}
-              className="flex flex-wrap justify-center gap-2"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-            >
-              {sortCardsForDisplay(tableDrop.cards, tableDrop.kind).map((card, index) => (
-                <Card key={`${card.r}-${card.s}-${index}`} card={card} size="md" />
-              ))}
-            </motion.div>
-          ) : (
-            <motion.p
-              key="empty-table"
-              className="max-w-xs text-center text-sm text-emerald-50/75"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 0.85 }}
-            >
-              Drops land here each turn. Once a set is available, draw from the table during the draw phase to strategize.
-            </motion.p>
-          )}
-        </AnimatePresence>
-      </div>
-
-      {tableDrop && (
-        <div className="mt-4 space-y-3">
-          {canDrawFromTableNow ? (
-            <div className="grid gap-2 sm:grid-cols-2">
-              {tableDrop.cards.map((card, originalIndex) => {
-                if (!canDrawFromTable(tableDrop, originalIndex)) return null;
-
-                return (
-                  <Button
-                    key={`${card.r}-${card.s}-${originalIndex}`}
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => onDrawFromTable(originalIndex)}
-                    data-testid={`button-draw-table-${originalIndex}`}
-                    className="justify-start gap-2"
-                  >
-                    <DrawCardIcon className="h-4 w-4" />
-                    Take {formatCardLabel(card)}
-                  </Button>
-                );
-              })}
-            </div>
-          ) : (
-            <p className="text-center text-xs text-emerald-50/75" data-testid="take-cards-hint">
-              {!isMyTurn
-                ? 'Wait for your turn to take cards.'
-                : turnStage === 'start'
-                ? 'Drop a set before drawing from the table.'
-                : 'No available cards to take right now.'}
-            </p>
-          )}
-        </div>
-      )}
-    </motion.div>
-  );
-}
-
-interface PlayerBadgeProps {
-  player: Player;
-  isCurrentTurn: boolean;
-  index: number;
-}
-
-function PlayerBadge({ player, isCurrentTurn, index }: PlayerBadgeProps) {
-  return (
-    <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <div className="h-11 w-11 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-lg font-semibold">
-              {player.name[0]?.toUpperCase()}
-            </div>
-            {isCurrentTurn && (
-              <motion.span
-                className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-accent shadow-md"
-                layoutId="turn-indicator"
-                transition={{ type: 'spring', stiffness: 350, damping: 30 }}
-              />
-            )}
-          </div>
-          <div>
-            <p className="font-semibold" data-testid={`player-name-${index}`}>
-              {player.name}
-            </p>
-            <p className="text-xs text-emerald-50/70">{player.hand.length} card{player.hand.length === 1 ? '' : 's'}</p>
-          </div>
-        </div>
-        <div className="chip-stack px-3 py-1 text-xs font-semibold">
-          {player.chipDelta >= 0 ? '+' : ''}
-          {player.chipDelta}
-        </div>
-      </div>
-
-      <div className="flex gap-1">
-        {Array.from({ length: Math.min(player.hand.length, 8) }).map((_, cardIndex) => (
-          <div
-            key={`${player.id}-card-${cardIndex}`}
-            className="h-12 w-8 rounded-md border border-white/20 bg-white/8"
-          />
-        ))}
-        {player.hand.length > 8 && (
-          <span className="ml-2 text-xs text-emerald-50/70">+{player.hand.length - 8}</span>
-        )}
-      </div>
     </div>
   );
 }

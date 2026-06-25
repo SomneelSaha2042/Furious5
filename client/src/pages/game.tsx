@@ -13,13 +13,8 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
-import { Badge } from '@/components/ui/badge';
-import { DoorOpen, Loader2, ShieldQuestion } from 'lucide-react';
-import {
-  ReconnectIcon,
-  RoomCodeIcon,
-  SocketLiveIcon,
-} from '@/components/icons/Furious5Icons';
+import { Loader2, DoorOpen, ShieldQuestion, Hash, LogOut, RotateCw } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -50,16 +45,13 @@ export default function Game() {
     markSessionAsStale,
   } = useGameSocket();
   
-  // Simplified: Just show what we have or redirect home
   useEffect(() => {
     if (!roomCode && !playerId) {
-      // No room info, go home
       const timer = setTimeout(() => setLocation('/'), 1000);
       return () => clearTimeout(timer);
     }
   }, [roomCode, playerId, setLocation]);
   
-  // Redirect to home if not in a room (with delay to allow socket to connect)
   const [shouldRedirect, setShouldRedirect] = useState(false);
   
   useEffect(() => {
@@ -67,8 +59,7 @@ export default function Game() {
       if (!roomCode || !playerId) {
         setShouldRedirect(true);
       }
-    }, 2000); // Give 2 seconds for connection to establish
-    
+    }, 2000);
     return () => clearTimeout(timer);
   }, [roomCode, playerId]);
   
@@ -78,35 +69,29 @@ export default function Game() {
     }
   }, [shouldRedirect, setLocation]);
   
-  // Show loading while checking connection
   if (!roomCode || !playerId) {
     return (
-      <div className="app-backdrop flex min-h-screen items-center justify-center px-4">
+      <div className="bg-felt-green felt-texture flex min-h-screen items-center justify-center px-4 text-white">
         <div className="space-y-3 text-center">
-          <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">Connecting to game...</p>
+          <Loader2 className="mx-auto h-8 w-8 animate-spin text-victory-gold" />
+          <p className="text-sm font-semibold text-victory-gold/80">Connecting to Furious Five table...</p>
         </div>
       </div>
     );
   }
   
-  // Try to fetch room state via HTTP if WebSocket isn't working
   const [httpGameState, setHttpGameState] = useState<GameState | null>(null);
   
   useEffect(() => {
     if (!gameState && roomCode) {
-      // Try fetching room state via HTTP
       const fetchRoomState = async () => {
         try {
-          console.log('Fetching room state via HTTP for room:', roomCode);
           const response = await fetch(`/api/rooms/${roomCode}`);
           const data = await response.json();
           
           if (data.success && data.gameState) {
-            console.log('Successfully fetched room state via HTTP');
             setHttpGameState(data.gameState);
           } else {
-            console.log('HTTP fetch failed:', data.error);
             if (response.status === 404 || data.error === 'Room not found') {
               markSessionAsStale();
             }
@@ -115,14 +100,11 @@ export default function Game() {
           console.error('Error fetching room state via HTTP:', error);
         }
       };
-      
-      // Wait a bit for WebSocket, then try HTTP
       const timer = setTimeout(fetchRoomState, 2000);
       return () => clearTimeout(timer);
     }
   }, [gameState, roomCode, markSessionAsStale]);
-
-  // Use WebSocket game state if available, otherwise use HTTP state, otherwise mock state
+  
   const fallbackGameState = useMemo<GameState>(() => ({
     roomCode: roomCode || 'FF-TEST',
     phase: 'lobby',
@@ -149,24 +131,24 @@ export default function Game() {
   }), [roomCode, playerId]);
 
   const effectiveGameState = gameState || httpGameState || fallbackGameState;
-
-  if (!gameState && !httpGameState) {
-    console.log('No gameState available. roomCode:', roomCode, 'playerId:', playerId);
-    console.log('Using mock state for testing...');
-  } else if (!gameState && httpGameState) {
-    console.log('Using HTTP-fetched game state');
-  }
-  
-  const connectionLabel = isConnected ? 'Connected' : 'Disconnected';
+  const isLobby = effectiveGameState.phase === 'lobby';
+  const isPlaying = effectiveGameState.phase === 'playing';
+  const isSettlement = effectiveGameState.phase === 'settlement';
 
   return (
-    <div className="app-backdrop min-h-screen">
+    <div className={cn(
+      "min-h-screen text-foreground select-none flex flex-col",
+      isLobby && "bg-felt-green felt-texture",
+      isPlaying && "bg-surface-cream",
+      isSettlement && "bg-felt-green bg-[radial-gradient(circle_at_center,_#0a5c46_0%,_#064e3b_100%)]"
+    )}>
+      {/* Session Inactive Dialog */}
       <AlertDialog open={staleSession} onOpenChange={() => {}}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Session inactive</AlertDialogTitle>
             <AlertDialogDescription>
-              This game session is no longer active. To go back to /main leave this game.
+              This game session is no longer active. To go back to main menu, leave this game.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -182,114 +164,118 @@ export default function Game() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <div className="mx-auto flex min-h-screen w-full max-w-[1480px] flex-col gap-6 px-4 py-6 sm:px-6 lg:px-10 xl:px-14">
-        <header className="flex flex-col gap-4 border-b border-border pb-5 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3">
-            <div className="grid h-12 w-12 place-items-center rounded-lg">
-              <img src="/icons/furious5-app-icon.svg" alt="" className="h-12 w-12" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-semibold">Furious Five</h1>
-              <div className="mt-1 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
-                <span className="flex items-center gap-1">
-                  <RoomCodeIcon className="h-4 w-4" />
-                  <span className="font-mono font-semibold" data-testid="room-code">
-                    {roomCode}
-                  </span>
-                </span>
-                <Badge variant="outline" className="flex items-center gap-2 text-xs">
-                  <SocketLiveIcon className={isConnected ? 'h-3.5 w-3.5 text-primary' : 'h-3.5 w-3.5 text-destructive'} />
-                  <span data-testid="connection-indicator">{connectionLabel}</span>
-                </Badge>
-              </div>
-            </div>
+      {/* Dynamic Navigation Bar */}
+      <header className={cn(
+        "flex justify-between items-center w-full px-6 py-4 z-50 shadow-md transition-all",
+        isPlaying 
+          ? "bg-felt-green text-white" 
+          : "bg-felt-green/95 backdrop-blur-md fixed top-0 left-0 text-white"
+      )}>
+        <div className="flex items-center gap-4">
+          <div className="bg-surface-cream p-2 rounded-lg shadow-sm flex items-center justify-center">
+            <span className="font-display font-extrabold text-2xl tracking-tighter text-victory-gold leading-none">Furious Five</span>
           </div>
-          <div className="flex items-center gap-3 self-end sm:self-auto">
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => {
-                clearRoom();
-                setLocation('/');
-              }}
-              data-testid="button-leave-game"
-              className="flex items-center gap-2"
-            >
-              <DoorOpen className="h-4 w-4" />
-              Leave game
-            </Button>
-            <ThemeToggle />
+          <div className="hidden md:flex items-center gap-2 px-3 py-1 bg-primary/30 rounded-full border border-white/20">
+            <Hash className="h-4 w-4 text-victory-gold" />
+            <span className="font-mono text-xs font-bold text-white">{roomCode}</span>
           </div>
-        </header>
-
-        <main className="flex flex-1 flex-col gap-6">
-          <div className="flex-1">
-            {effectiveGameState.phase === 'lobby' && (
-              <LobbyView
-                gameState={effectiveGameState}
-                playerId={playerId || ''}
-                onStartGame={startGame}
-                onToggleReady={toggleReady}
-              />
-            )}
-
-            {effectiveGameState.phase === 'playing' && (
-              <GameTableView
-                gameState={effectiveGameState}
-                playerId={playerId}
-                onCall={call}
-                onDropCards={dropCards}
-                onDrawFromDeck={drawFromDeck}
-                onDrawFromTable={drawFromTable}
-              />
-            )}
-
-            {effectiveGameState.phase === 'settlement' && (
-              <SettlementView
-                gameState={effectiveGameState}
-                onStartNewRound={startNewRound}
-              />
-            )}
+          <div className="hidden md:flex items-center gap-1.5 px-3 py-1 bg-action-emerald/20 rounded-full">
+            <div className={cn("w-2 h-2 rounded-full", isConnected ? "bg-action-emerald animate-pulse" : "bg-loss-crimson")} />
+            <span className={cn("font-mono text-[10px] font-extrabold uppercase", isConnected ? "text-action-emerald" : "text-loss-crimson")}>
+              {isConnected ? 'Connected' : 'Disconnected'}
+            </span>
           </div>
+        </div>
 
-          <Accordion type="single" collapsible>
-            <AccordionItem value="debug">
-              <AccordionTrigger className="text-sm font-semibold text-muted-foreground">
-                Debug utilities
+        <div className="flex items-center gap-3">
+          <Button
+            onClick={() => {
+              clearRoom();
+              setLocation('/');
+            }}
+            variant="destructive"
+            size="sm"
+            className="flex items-center gap-2 bg-loss-crimson hover:bg-loss-crimson/90 text-white shadow-sm font-bold rounded-xl"
+          >
+            <LogOut className="h-4 w-4" />
+            <span className="hidden sm:inline">Leave game</span>
+          </Button>
+          <ThemeToggle />
+        </div>
+      </header>
+
+      {/* Main Layout Area */}
+      <main className={cn(
+        "flex-1 w-full max-w-7xl mx-auto px-4 md:px-6 transition-all",
+        isPlaying ? "py-6" : "pt-28 pb-12"
+      )}>
+        {isLobby && (
+          <LobbyView
+            gameState={effectiveGameState}
+            playerId={playerId || ''}
+            onStartGame={startGame}
+            onToggleReady={toggleReady}
+          />
+        )}
+
+        {isPlaying && (
+          <GameTableView
+            gameState={effectiveGameState}
+            playerId={playerId}
+            onCall={call}
+            onDropCards={dropCards}
+            onDrawFromDeck={drawFromDeck}
+            onDrawFromTable={drawFromTable}
+          />
+        )}
+
+        {isSettlement && (
+          <SettlementView
+            gameState={effectiveGameState}
+            onStartNewRound={startNewRound}
+          />
+        )}
+
+        {/* Collapsible Debug Panel at the bottom */}
+        <footer className="mt-12 mb-8 max-w-3xl mx-auto opacity-70 hover:opacity-100 transition-opacity">
+          <Accordion type="single" collapsible className="bg-white/5 rounded-2xl border border-white/10 overflow-hidden">
+            <AccordionItem value="debug" className="border-b-0">
+              <AccordionTrigger className="px-6 py-4 text-xs font-mono font-bold tracking-wider uppercase text-victory-gold hover:no-underline">
+                Debug Utilities & Stats
               </AccordionTrigger>
-              <AccordionContent className="space-y-3 text-sm text-muted-foreground">
+              <AccordionContent className="px-6 pb-6 pt-2 space-y-3 font-mono text-xs text-white/70">
                 <p className="flex items-center gap-2">
-                  <ShieldQuestion className="h-4 w-4" />
-                  If things look out of sync, use these helpers.
+                  <ShieldQuestion className="h-4 w-4 text-victory-gold" />
+                  Use these helpers to synchronize game state manually.
                 </p>
-                <div className="flex flex-col gap-2 sm:flex-row">
+                <div className="flex flex-col gap-2 sm:flex-row pt-2">
                   <Button
                     variant="outline"
                     size="sm"
-                    className="flex items-center gap-2"
+                    className="flex items-center gap-2 border-white/20 text-white bg-white/5 hover:bg-white/10 hover:text-white"
                     onClick={() => requestGameState?.()}
                   >
-                    <ReconnectIcon className="h-4 w-4" />
+                    <RotateCw className="h-3 w-3" />
                     Request latest state
                   </Button>
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="flex items-center gap-2"
+                    className="flex items-center gap-2 text-white/50 hover:text-white hover:bg-white/5"
                     onClick={() => {
                       clearRoom();
                       setLocation('/');
                     }}
                   >
                     <DoorOpen className="h-4 w-4" />
-                    Force leave & reset
+                    Force Reset & Leave
                   </Button>
                 </div>
               </AccordionContent>
             </AccordionItem>
           </Accordion>
-        </main>
-      </div>
+        </footer>
+      </main>
     </div>
   );
 }

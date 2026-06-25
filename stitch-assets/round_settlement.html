@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Furious Five - Round Settlement</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&amp;family=Space+Grotesk:wght@700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-tertiary-fixed": "#2a1700",
+                      "inverse-on-surface": "#f0f1f2",
+                      "surface-container-high": "#e7e8e9",
+                      "on-secondary-container": "#00714d",
+                      "error": "#ba1a1a",
+                      "surface-bright": "#f8f9fa",
+                      "surface-container-lowest": "#ffffff",
+                      "surface-tint": "#2b6954",
+                      "secondary-container": "#6cf8bb",
+                      "primary-container": "#064e3b",
+                      "felt-green": "#064E3B",
+                      "on-error-container": "#93000a",
+                      "on-tertiary": "#ffffff",
+                      "on-surface-variant": "#404944",
+                      "on-secondary-fixed-variant": "#005236",
+                      "outline-variant": "#bfc9c3",
+                      "on-secondary": "#ffffff",
+                      "surface-dim": "#d9dadb",
+                      "tertiary-fixed": "#ffddb8",
+                      "inverse-surface": "#2e3132",
+                      "on-tertiary-fixed-variant": "#653e00",
+                      "on-background": "#191c1d",
+                      "on-primary-container": "#80bea6",
+                      "error-container": "#ffdad6",
+                      "primary-fixed": "#b0f0d6",
+                      "on-error": "#ffffff",
+                      "primary-fixed-dim": "#95d3ba",
+                      "tertiary": "#442800",
+                      "surface-container-highest": "#e1e3e4",
+                      "background": "#f8f9fa",
+                      "action-emerald": "#10B981",
+                      "tertiary-container": "#623c00",
+                      "tertiary-fixed-dim": "#ffb95f",
+                      "outline": "#707974",
+                      "secondary-fixed": "#6ffbbe",
+                      "surface": "#f8f9fa",
+                      "primary": "#003527",
+                      "on-primary-fixed-variant": "#0b513d",
+                      "on-tertiary-container": "#f69f0d",
+                      "surface-cream": "#FDFBF7",
+                      "surface-container-low": "#f3f4f5",
+                      "secondary": "#006c49",
+                      "on-surface": "#191c1d",
+                      "on-secondary-fixed": "#002113",
+                      "loss-crimson": "#BE123C",
+                      "surface-variant": "#e1e3e4",
+                      "inverse-primary": "#95d3ba",
+                      "secondary-fixed-dim": "#4edea3",
+                      "victory-gold": "#F59E0B",
+                      "on-primary-fixed": "#002117",
+                      "surface-container": "#edeeef",
+                      "on-primary": "#ffffff"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "base": "8px",
+                      "container-padding": "24px",
+                      "gutter": "16px",
+                      "card-overlap": "-40px"
+              },
+              "fontFamily": {
+                      "label-caps": ["Space Grotesk"],
+                      "headline-lg": ["Plus Jakarta Sans"],
+                      "body-base": ["Plus Jakarta Sans"],
+                      "display-lg": ["Plus Jakarta Sans"],
+                      "headline-lg-mobile": ["Plus Jakarta Sans"],
+                      "title-md": ["Plus Jakarta Sans"],
+                      "card-value": ["Space Grotesk"]
+              },
+              "fontSize": {
+                      "label-caps": ["12px", {"lineHeight": "16px", "letterSpacing": "0.1em", "fontWeight": "700"}],
+                      "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "700"}],
+                      "body-base": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                      "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+                      "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                      "title-md": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                      "card-value": ["24px", {"lineHeight": "24px", "fontWeight": "700"}]
+              }
+            },
+          },
+        }
+    </script>
+<style>
+        body {
+            background-color: #064E3B; /* felt-green fallback */
+            background-image: radial-gradient(circle at center, #0a5c46 0%, #064e3b 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .card-shadow {
+            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.3);
+        }
+        .pressed-button {
+            box-shadow: 0 4px 0 0 #064e3b;
+        }
+        .pressed-button:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 0 #064e3b;
+        }
+        .victory-pulse {
+            animation: pulse-gold 2s infinite;
+        }
+        @keyframes pulse-gold {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body class="font-body-base text-on-surface">
+<!-- TopAppBar -->
+<header class="bg-felt-green/90 backdrop-blur-md shadow-md flex justify-between items-center w-full px-container-padding py-4 z-50 fixed top-0">
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-2">
+<div class="w-10 h-10 rounded-lg bg-victory-gold flex items-center justify-center">
+<span class="material-symbols-outlined text-primary font-bold">playing_cards</span>
+</div>
+<div class="flex flex-col">
+<span class="font-display-lg text-headline-lg tracking-tighter text-victory-gold leading-none">Furious Five</span>
+<div class="flex items-center gap-2">
+<span class="text-[10px] text-on-primary-container opacity-80 uppercase tracking-widest font-bold">FF-9B3WPI</span>
+<div class="w-2 h-2 rounded-full bg-action-emerald"></div>
+<span class="text-[10px] text-on-primary-container opacity-80">Connected</span>
+</div>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="bg-primary-container/20 text-on-primary-container px-4 py-2 rounded-xl flex items-center gap-2 hover:scale-105 transition-transform duration-200 active:scale-95">
+<span class="material-symbols-outlined text-[20px]">content_copy</span>
+<span class="font-label-caps text-label-caps uppercase">Invite</span>
+</button>
+<button class="bg-loss-crimson/20 text-on-error-container px-4 py-2 rounded-xl flex items-center gap-2 hover:scale-105 transition-transform duration-200 active:scale-95">
+<span class="material-symbols-outlined text-[20px]">logout</span>
+<span class="font-label-caps text-label-caps uppercase">Leave</span>
+</button>
+</div>
+</header>
+<main class="flex-grow pt-28 pb-32 px-gutter flex items-center justify-center overflow-hidden">
+<!-- Settlement Canvas -->
+<div class="max-w-4xl w-full bg-surface-cream rounded-3xl card-shadow overflow-hidden p-8 md:p-12 relative">
+<!-- Confetti/Shader Overlay (Hypothetical asset integration) -->
+
+<div class="relative z-10 text-center space-y-12">
+<!-- Header Section -->
+<div class="space-y-2">
+<div class="flex justify-center mb-4">
+<span class="material-symbols-outlined text-action-emerald text-4xl" style="font-variation-settings: 'FILL' 1;">stars</span>
+</div>
+<h1 class="font-headline-lg text-headline-lg md:text-display-lg text-primary">Round settlement</h1>
+<div class="inline-block px-6 py-2 bg-secondary-container/30 rounded-full">
+<p class="font-title-md text-title-md text-on-secondary-container">
+                            Somneel called with <span class="font-bold">5 points</span>. 
+                            <span class="text-action-emerald">Successful call</span>
+</p>
+</div>
+</div>
+<!-- Result Cards -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto">
+<!-- Winner Card -->
+<div class="bg-white border-2 border-action-emerald/20 p-8 rounded-2xl shadow-sm hover:scale-[1.02] transition-transform duration-300">
+<div class="flex flex-col items-center gap-4">
+<div class="w-16 h-16 rounded-full bg-primary-container flex items-center justify-center text-on-primary-container text-2xl font-bold">S</div>
+<div class="text-center">
+<h3 class="font-title-md text-title-md text-primary">Somneel <span class="text-sm opacity-50 font-normal">- caller</span></h3>
+<p class="text-sm text-outline">Hand total <span class="font-bold">5 points</span></p>
+</div>
+<div class="flex flex-col items-center">
+<div class="text-4xl font-bold text-action-emerald flex items-center gap-2">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">monetization_on</span>
+                                    +5
+                                </div>
+<span class="font-label-caps text-label-caps text-outline uppercase mt-2">Call paid off</span>
+</div>
+</div>
+</div>
+<!-- Loser Card -->
+<div class="bg-surface-container-low p-8 rounded-2xl shadow-sm border border-outline-variant/30 hover:scale-[1.02] transition-transform duration-300">
+<div class="flex flex-col items-center gap-4">
+<div class="w-16 h-16 rounded-full bg-on-surface-variant flex items-center justify-center text-white text-2xl font-bold opacity-80">S</div>
+<div class="text-center">
+<h3 class="font-title-md text-title-md text-primary">som</h3>
+<p class="text-sm text-outline">Hand total <span class="font-bold">10 points</span></p>
+</div>
+<div class="flex flex-col items-center">
+<div class="text-4xl font-bold text-loss-crimson flex items-center gap-2">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">money_off</span>
+                                    -5
+                                </div>
+<span class="font-label-caps text-label-caps text-outline uppercase mt-2">Paid out</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Running Totals Bento Style -->
+<div class="bg-surface-variant/30 border border-outline-variant rounded-2xl p-6 max-w-2xl mx-auto">
+<div class="flex items-center justify-center gap-2 mb-6">
+<span class="material-symbols-outlined text-victory-gold">leaderboard</span>
+<h4 class="font-label-caps text-label-caps uppercase text-outline">Running totals</h4>
+</div>
+<div class="flex justify-around items-end">
+<div class="flex flex-col items-center gap-1">
+<span class="text-xs text-outline font-bold">Somneel</span>
+<div class="w-16 bg-action-emerald rounded-t-lg transition-all duration-1000 ease-out h-24 shadow-inner"></div>
+<span class="font-card-value text-card-value text-action-emerald">+5</span>
+</div>
+<div class="flex flex-col items-center gap-1">
+<span class="text-xs text-outline font-bold">som</span>
+<div class="w-16 bg-loss-crimson rounded-t-lg transition-all duration-1000 ease-out h-12 shadow-inner"></div>
+<span class="font-card-value text-card-value text-loss-crimson">-5</span>
+</div>
+</div>
+</div>
+<!-- Winning Hand Detail -->
+<div class="space-y-6">
+<div class="flex flex-col items-center gap-2">
+<h4 class="font-title-md text-title-md text-primary">Winning hand <span class="text-outline font-normal text-base">(5 points)</span></h4>
+<p class="text-sm font-bold text-action-emerald uppercase tracking-wider">Somneel</p>
+</div>
+<div class="flex justify-center gap-4">
+<!-- Card 1 -->
+<div class="w-20 h-32 bg-white rounded-xl shadow-lg border border-outline-variant flex flex-col justify-between p-3 relative group hover:-translate-y-2 transition-transform cursor-default">
+<div class="flex flex-col items-start leading-none">
+<span class="font-card-value text-card-value text-loss-crimson">2</span>
+<span class="material-symbols-outlined text-loss-crimson text-sm" style="font-variation-settings: 'FILL' 1;">favorite</span>
+</div>
+<div class="absolute inset-0 flex items-center justify-center opacity-10">
+<span class="material-symbols-outlined text-6xl text-loss-crimson" style="font-variation-settings: 'FILL' 1;">favorite</span>
+</div>
+<div class="flex flex-col items-end leading-none rotate-180">
+<span class="font-card-value text-card-value text-loss-crimson">2</span>
+<span class="material-symbols-outlined text-loss-crimson text-sm" style="font-variation-settings: 'FILL' 1;">favorite</span>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="w-20 h-32 bg-white rounded-xl shadow-lg border border-outline-variant flex flex-col justify-between p-3 relative group hover:-translate-y-2 transition-transform cursor-default">
+<div class="flex flex-col items-start leading-none">
+<span class="font-card-value text-card-value text-primary">3</span>
+<span class="material-symbols-outlined text-primary text-sm" style="font-variation-settings: 'FILL' 1;">padel</span>
+</div>
+<div class="absolute inset-0 flex items-center justify-center opacity-10">
+<span class="material-symbols-outlined text-6xl text-primary" style="font-variation-settings: 'FILL' 1;">padel</span>
+</div>
+<div class="flex flex-col items-end leading-none rotate-180">
+<span class="font-card-value text-card-value text-primary">3</span>
+<span class="material-symbols-outlined text-primary text-sm" style="font-variation-settings: 'FILL' 1;">padel</span>
+</div>
+</div>
+</div>
+</div>
+<!-- CTA -->
+<div class="pt-8">
+<button class="bg-action-emerald text-on-primary font-title-md text-title-md px-12 py-5 rounded-2xl pressed-button transition-all duration-200 flex items-center gap-3 mx-auto hover:scale-105 active:scale-95">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">refresh</span>
+                        Start new round
+                    </button>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar (Predicted) -->
+<nav class="fixed bottom-0 w-full z-50 flex justify-around items-center px-gutter py-base h-24 bg-surface-cream border-t-4 border-primary shadow-[0_-4px_10px_rgba(0,0,0,0.1)] md:hidden">
+<a class="flex flex-col items-center justify-center text-outline p-2 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="check_circle">check_circle</span>
+<span class="font-label-caps text-label-caps uppercase mt-1">Ready</span>
+</a>
+<a class="flex flex-col items-center justify-center text-outline p-2 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="record_voice_over">record_voice_over</span>
+<span class="font-label-caps text-label-caps uppercase mt-1">Call</span>
+</a>
+<a class="flex flex-col items-center justify-center text-outline p-2 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="vertical_align_bottom">vertical_align_bottom</span>
+<span class="font-label-caps text-label-caps uppercase mt-1">Drop</span>
+</a>
+<a class="flex flex-col items-center justify-center text-outline p-2 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="style">style</span>
+<span class="font-label-caps text-label-caps uppercase mt-1">Draw</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-action-emerald text-on-primary rounded-xl px-6 py-2 shadow-[0_4px_0_0_#064e3b] scale-110" href="#">
+<span class="material-symbols-outlined" data-icon="refresh">refresh</span>
+<span class="font-label-caps text-label-caps uppercase mt-1">New Round</span>
+</a>
+</nav>
+<!-- Micro-interaction script -->
+<script>
+        document.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                let ripple = document.createElement('div');
+                ripple.className = 'ripple absolute rounded-full bg-white/20 pointer-events-none transform -translate-x-1/2 -translate-y-1/2 animate-ping';
+                ripple.style.width = '100px';
+                ripple.style.height = '100px';
+                ripple.style.left = e.offsetX + 'px';
+                ripple.style.top = e.offsetY + 'px';
+                this.classList.add('relative', 'overflow-hidden');
+                this.appendChild(ripple);
+                setTimeout(() => ripple.remove(), 500);
+            });
+        });
+    </script>
+</body></html>

@@ -1,16 +1,15 @@
 import { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Card } from './card';
-import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { Card as CardType, GameState, Drop } from '@shared/game-types';
 import { canCall, sumPoints, validateDrop } from '@shared/game-engine';
 import {
-  CallFiveIcon,
-  DeckIcon,
-  DropCardIcon,
-  PlayerHandIcon,
-} from '@/components/icons/Furious5Icons';
+  ShieldCheck,
+  Hand,
+  ArrowDown,
+  Layers,
+} from 'lucide-react';
 
 interface PlayerHandProps {
   gameState: GameState;
@@ -38,7 +37,6 @@ export function PlayerHand({ gameState, playerId, onCall, onDropCards, onDrawFro
   const validDrop = useMemo<Drop | null>(() => {
     if (!currentPlayer || selectedCardObjects.length === 0) return null;
 
-    // Try different drop types
     const cards = selectedCardObjects;
 
     if (cards.length === 1) {
@@ -115,33 +113,28 @@ export function PlayerHand({ gameState, playerId, onCall, onDropCards, onDrawFro
 
   return (
     <motion.section
-      className="table-panel flex flex-col gap-6 p-4 sm:p-6"
+      className="bg-white rounded-[24px] p-6 sm:p-8 card-shadow border border-outline-variant/30 relative text-foreground"
       layout
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.22 }}
     >
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3">
-          <div className="h-12 w-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xl font-semibold">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 rounded-full bg-secondary flex items-center justify-center text-white font-bold text-xl shadow-md border-4 border-surface-cream">
             {currentPlayer.name[0]?.toUpperCase()}
           </div>
           <div>
-            <p className="text-base font-semibold" data-testid="player-name">
-              <PlayerHandIcon className="mr-1.5 inline h-4 w-4 text-primary align-[-0.15em]" />
-              {currentPlayer.name} (You)
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Hand total:
-              {' '}
-              <span className="font-semibold text-foreground" data-testid="hand-total">
-                {handTotal}
-              </span>
-              {' '}points
+            <div className="flex items-center gap-2">
+              <h2 className="font-display text-lg font-bold text-primary">{currentPlayer.name} (You)</h2>
+              <ShieldCheck className="h-4 w-4 text-primary" />
+            </div>
+            <p className="text-muted-foreground text-sm">
+              Hand total: <span className="font-bold text-primary" data-testid="hand-total">{handTotal} points</span>
             </p>
           </div>
         </div>
-        <div className="text-xs sm:text-sm text-muted-foreground">
+        <div className="text-right text-xs text-muted-foreground">
           {cardIsInteractive
             ? 'Tap cards to build a drop. Scroll sideways to scan your hand.'
             : isMyTurn
@@ -150,59 +143,65 @@ export function PlayerHand({ gameState, playerId, onCall, onDropCards, onDrawFro
         </div>
       </div>
 
-      <div className="relative">
-        <div className="pointer-events-none absolute inset-y-0 left-0 w-10 bg-gradient-to-r from-background to-transparent" />
-        <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-background to-transparent" />
-        <div className="flex gap-3 overflow-x-auto pb-3 -mx-3 px-3 sm:px-4 snap-x snap-mandatory">
-          {currentPlayer.hand.map((card, index) => {
-            const key = cardKey(card);
-            const isSelected = selectedCards.has(key);
-            return (
-              <motion.div
-                key={`${key}-${index}`}
-                whileHover={{ y: cardIsInteractive ? -6 : 0 }}
-                whileTap={{ scale: cardIsInteractive ? 0.96 : 1 }}
-                animate={{ y: isSelected ? -12 : 0, scale: isSelected ? 1.02 : 1 }}
-                transition={{ type: 'spring', stiffness: 260, damping: 18 }}
-                className="snap-start"
-              >
-                <Card
-                  card={card}
-                  size="lg"
-                  selected={isSelected}
-                  onClick={() => handleCardClick(card)}
-                  className={cn(
-                    cardIsInteractive ? 'cursor-pointer' : 'cursor-not-allowed opacity-75',
-                    'border-2 border-transparent hover:border-accent/70'
-                  )}
-                />
-              </motion.div>
-            );
-          })}
-        </div>
+      {/* Cards list scrolling */}
+      <div className="flex gap-4 mb-8 overflow-x-auto pb-4 scrollbar-hide -mx-2 px-2 snap-x snap-mandatory">
+        {currentPlayer.hand.map((card, index) => {
+          const key = cardKey(card);
+          const isSelected = selectedCards.has(key);
+          return (
+            <div
+              key={`${key}-${index}`}
+              className="flex-shrink-0 snap-start"
+            >
+              <Card
+                card={card}
+                size="lg"
+                selected={isSelected}
+                onClick={() => handleCardClick(card)}
+                className={cn(
+                  cardIsInteractive ? 'cursor-pointer' : 'cursor-not-allowed opacity-75',
+                  !cardIsInteractive && 'hover:translate-y-0 hover:shadow-md hover:border-outline-variant/30'
+                )}
+              />
+            </div>
+          );
+        })}
+        {currentPlayer.hand.length === 0 && (
+          <div className="flex-shrink-0 opacity-20">
+            <div className="w-24 h-36 rounded-xl border-2 border-dashed border-outline-variant"></div>
+          </div>
+        )}
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-3">
-        <Button
-          variant={canCallNow ? 'destructive' : 'secondary'}
-          size="lg"
+      {/* Action buttons matching chunky designs */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Call Button */}
+        <button
           disabled={!canCallNow || !isMyTurn}
           onClick={onCall}
-          data-testid="button-call"
-          className="flex items-center justify-center gap-2 py-3"
+          className={cn(
+            "h-14 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all",
+            canCallNow && isMyTurn
+              ? "chunky-button bg-loss-crimson text-white shadow-[0_4px_0_0_#9f1239] hover:brightness-110"
+              : "bg-muted text-muted-foreground border border-border cursor-not-allowed opacity-60"
+          )}
         >
-          <CallFiveIcon className="h-5 w-5" />
-          <span>{canCallNow ? `Call (${handTotal})` : `Call (${handTotal} >= 5)`}</span>
-        </Button>
+          <Hand className="h-5 w-5" />
+          <span>Call ({handTotal})</span>
+        </button>
 
-        <Button
-          size="lg"
+        {/* Drop Button */}
+        <button
           disabled={!isMyTurn || gameState.turnStage !== 'start' || !validDrop}
           onClick={handleDrop}
-          data-testid="button-drop"
-          className="flex items-center justify-center gap-2 py-3"
+          className={cn(
+            "h-14 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all",
+            isMyTurn && gameState.turnStage === 'start' && validDrop
+              ? "chunky-button bg-action-emerald text-white shadow-[0_4px_0_0_#064e3b] hover:brightness-110"
+              : "bg-muted text-muted-foreground border border-border cursor-not-allowed opacity-60"
+          )}
         >
-          <DropCardIcon className="h-5 w-5" />
+          <ArrowDown className="h-5 w-5" />
           <span>
             {!isMyTurn
               ? 'Wait for turn'
@@ -210,19 +209,22 @@ export function PlayerHand({ gameState, playerId, onCall, onDropCards, onDrawFro
               ? 'Turn in progress'
               : getDropButtonText()}
           </span>
-        </Button>
+        </button>
 
-        <Button
-          variant="secondary"
-          size="lg"
+        {/* Draw Button */}
+        <button
           disabled={!isMyTurn || gameState.turnStage !== 'dropped'}
           onClick={onDrawFromDeck}
-          data-testid="button-draw-deck"
-          className="flex items-center justify-center gap-2 py-3"
+          className={cn(
+            "h-14 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all",
+            isMyTurn && gameState.turnStage === 'dropped'
+              ? "chunky-button bg-primary text-white shadow-[0_4px_0_0_#002117] hover:brightness-110"
+              : "bg-muted text-muted-foreground border border-border cursor-not-allowed opacity-60"
+          )}
         >
-          <DeckIcon className="h-5 w-5" />
+          <Layers className="h-5 w-5" />
           <span>Draw from Deck</span>
-        </Button>
+        </button>
       </div>
     </motion.section>
   );

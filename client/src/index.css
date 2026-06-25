@@ -3,57 +3,63 @@
 @tailwind utilities;
 
 :root {
-  --background: #f6f7f2;
-  --foreground: #16181d;
-  --muted: #e9ece6;
-  --muted-foreground: #626973;
-  --card: #ffffff;
-  --card-foreground: #171a20;
-  --popover: #ffffff;
-  --popover-foreground: #171a20;
-  --primary: #0f766e;
-  --primary-foreground: #f8fffd;
-  --secondary: #263241;
-  --secondary-foreground: #f6f8fb;
-  --accent: #d9a21b;
-  --accent-foreground: #171a20;
-  --destructive: #b4232c;
-  --destructive-foreground: #fff8f8;
-  --border: #d7dcd4;
-  --input: #cbd2ca;
-  --ring: #0f766e;
-  --chart-1: #0f766e;
-  --chart-2: #d9a21b;
-  --chart-3: #b85f38;
-  --chart-4: #3f6f8f;
+  --background: #f8f9fa;
+  --foreground: #191c1d;
+  --muted: #f3f4f5;
+  --muted-foreground: #404944;
+  --card: #FDFBF7; /* surface-cream */
+  --card-foreground: #191c1d;
+  --popover: #FDFBF7;
+  --popover-foreground: #191c1d;
+  --primary: #003527;
+  --primary-foreground: #ffffff;
+  --secondary: #006c49;
+  --secondary-foreground: #ffffff;
+  --accent: #F59E0B; /* victory-gold */
+  --accent-foreground: #003527;
+  --destructive: #BE123C; /* loss-crimson */
+  --destructive-foreground: #ffffff;
+  --border: #bfc9c3; /* outline-variant */
+  --input: #707974; /* outline */
+  --ring: #003527;
+  --chart-1: #003527;
+  --chart-2: #006c49;
+  --chart-3: #F59E0B;
+  --chart-4: #BE123C;
   --chart-5: #6b5d93;
   --sidebar-background: #ffffff;
-  --sidebar-foreground: #171a20;
-  --sidebar-primary: #0f766e;
-  --sidebar-primary-foreground: #f8fffd;
-  --sidebar-accent: #e6efec;
-  --sidebar-accent-foreground: #0f766e;
-  --sidebar-border: #d7dcd4;
-  --sidebar-ring: #0f766e;
+  --sidebar-foreground: #191c1d;
+  --sidebar-primary: #003527;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #bfc9c3;
+  --sidebar-accent-foreground: #003527;
+  --sidebar-border: #bfc9c3;
+  --sidebar-ring: #003527;
 
-  --felt-base: #0b5a3d;
+  --felt-green: #064E3B;
+  --action-emerald: #10B981;
+  --victory-gold: #F59E0B;
+  --loss-crimson: #BE123C;
+  --surface-cream: #FDFBF7;
+
+  --felt-base: #064E3B;
   --felt-grid: rgba(255, 255, 255, 0.08);
-  --felt-border: #06422c;
-  --chip-gold: #d9a21b;
-  --chip-slate: #263241;
-  --chip-emerald: #0f766e;
-  --chip-ruby: #b4232c;
+  --felt-border: #003527;
+  --chip-gold: #F59E0B;
+  --chip-slate: #191c1d;
+  --chip-emerald: #10B981;
+  --chip-ruby: #BE123C;
 
-  --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --font-display: 'Poppins', 'Inter', sans-serif;
-  --font-mono: 'IBM Plex Mono', 'SFMono-Regular', ui-monospace, monospace;
-  --heading-weight: 600;
+  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-display: 'Plus Jakarta Sans', sans-serif;
+  --font-mono: 'Space Grotesk', monospace;
+  --heading-weight: 700;
   --body-weight: 400;
   --tracking-normal: 0;
   --line-height-tight: 1.2;
   --line-height-normal: 1.55;
 
-  --radius: 8px;
+  --radius: 16px;
   --shadow-table: 0 22px 48px -34px rgba(6, 32, 23, 0.7);
   --shadow-ambient: 0 14px 28px -24px rgba(24, 32, 48, 0.45);
 
@@ -61,67 +67,6 @@
 }
 
 .dark {
-  --background: #0d1117;
-  --foreground: #e9ecf5;
-  --muted: #18202b;
-  --muted-foreground: #a1a9c1;
-  --card: #111823;
-  --card-foreground: #f2f5ff;
-  --popover: #111823;
-  --popover-foreground: #f2f5ff;
-  --primary: #38b99f;
-  --primary-foreground: #06231a;
-  --secondary: #1a2733;
-  --secondary-foreground: #dbe3f5;
-  --accent: #e4b538;
-  --accent-foreground: #1a1f29;
-  --destructive: #ff7269;
-  --destructive-foreground: #1b090a;
-  --border: rgba(85, 120, 135, 0.35);
-  --input: rgba(55, 85, 103, 0.55);
-  --ring: rgba(71, 199, 164, 0.75);
-  --chart-1: #47c7a4;
-  --chart-2: #f6c542;
-  --chart-3: #ff8f6b;
-  --chart-4: #5b7bff;
-  --chart-5: #a891ff;
-  --sidebar-background: rgba(16, 22, 31, 0.82);
-  --sidebar-foreground: #e9ecf5;
-  --sidebar-primary: #47c7a4;
-  --sidebar-primary-foreground: #06231a;
-  --sidebar-accent: rgba(71, 199, 164, 0.12);
-  --sidebar-accent-foreground: #47c7a4;
-  --sidebar-border: rgba(71, 199, 164, 0.2);
-  --sidebar-ring: rgba(71, 199, 164, 0.45);
-
-  --felt-base: #0a3424;
-  --felt-grid: rgba(22, 110, 78, 0.26);
-  --felt-border: rgba(5, 26, 17, 0.6);
-  --chip-gold: #f6c542;
-  --chip-slate: #1a2733;
-  --chip-emerald: #47c7a4;
-  --chip-ruby: #ff7269;
-
-  --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --font-display: 'Poppins', 'Inter', sans-serif;
-  --font-mono: 'IBM Plex Mono', 'SFMono-Regular', ui-monospace, monospace;
-  --heading-weight: 600;
-  --body-weight: 400;
-  --tracking-normal: 0;
-  --line-height-tight: 1.25;
-  --line-height-normal: 1.6;
-
-  --radius: 8px;
-  --shadow-table: 0 36px 48px -38px rgba(5, 28, 20, 0.9);
-  --shadow-ambient: 0 24px 42px -28px rgba(8, 14, 25, 0.8);
-
-  --transition-snappy: 220ms cubic-bezier(0.33, 1, 0.68, 1);
-}
-
-@layer base {
-  * {
-    @apply border-border;
-  }
 
   body {
     @apply font-sans antialiased bg-background text-foreground;
@@ -267,5 +212,37 @@
 
   .shadow-table {
     box-shadow: var(--shadow-table);
+  }
+
+  .felt-texture {
+    background-image: url("https://www.transparenttextures.com/patterns/felt.png");
+  }
+
+  .glass-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+  }
+
+  .chunky-button {
+    box-shadow: 0 4px 0 0 rgba(0, 0, 0, 0.15);
+  }
+
+  .chunky-button:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 0 rgba(0, 0, 0, 0.15);
+  }
+
+  .card-shadow {
+    box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.3);
+  }
+
+  .table-inner-glow {
+    box-shadow: inset 0 0 40px rgba(0,0,0,0.2);
+  }
+
+  .timer-progress {
+    stroke-dasharray: 100;
+    stroke-dashoffset: 26;
+    transition: stroke-dashoffset 1s linear;
   }
 }

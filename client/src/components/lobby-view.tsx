@@ -1,15 +1,22 @@
-import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
+import { useState } from 'react';
 import type { GameState } from '@shared/game-types';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Users, Copy, Check, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 import {
-  LobbyIcon,
-  RoomCodeIcon,
-  SocketLiveIcon,
-  StartGameIcon,
-} from '@/components/icons/Furious5Icons';
+  Hourglass,
+  Users,
+  CheckCircle2,
+  XCircle,
+  Check,
+  UserPlus,
+  Layers,
+  Hash,
+  Copy,
+  PlayCircle,
+  Star,
+  Search,
+} from 'lucide-react';
 
 interface LobbyViewProps {
   gameState: GameState;
@@ -20,6 +27,8 @@ interface LobbyViewProps {
 
 export function LobbyView({ gameState, playerId, onStartGame, onToggleReady }: LobbyViewProps) {
   const { toast } = useToast();
+  const [copied, setCopied] = useState(false);
+  
   const currentPlayer = gameState.players.find(p => p.id === playerId);
   const allReady = gameState.players.length >= 2 && gameState.players.every(p => p.ready);
   const readyCount = gameState.players.filter(p => p.ready).length;
@@ -30,39 +39,45 @@ export function LobbyView({ gameState, playerId, onStartGame, onToggleReady }: L
       ? `Waiting for players to ready up... (${readyCount}/${gameState.players.length})`
       : 'All players ready! Game can start.';
 
+  const handleCopyCode = () => {
+    navigator.clipboard.writeText(gameState.roomCode);
+    setCopied(true);
+    toast({
+      title: 'Room code copied!',
+      description: 'Share this code with friends to join your room.',
+    });
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   return (
     <motion.div
-      className="mx-auto flex w-full max-w-3xl flex-col gap-6"
+      className="mx-auto flex w-full max-w-3xl flex-col items-center justify-center pt-8"
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.24 }}
     >
-      <section className="table-panel p-5 sm:p-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      {/* Central Lobby Card */}
+      <div className="glass-card rounded-2xl shadow-2xl p-6 sm:p-8 border border-white/25 w-full text-foreground">
+        <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-8">
           <div>
-            <h2 className="text-3xl font-semibold" data-testid="lobby-title">
-              Game Lobby
-            </h2>
-            <p className="text-sm text-muted-foreground flex items-center gap-2">
-              <LobbyIcon className="h-4 w-4" />
+            <h1 className="font-display text-3xl font-extrabold text-primary mb-1">Game Lobby</h1>
+            <p className="font-sans text-sm text-muted-foreground flex items-center gap-2">
+              <Hourglass className="h-4 w-4 animate-pulse text-victory-gold" />
               {readyDescriptor}
             </p>
           </div>
-          <div className="flex items-center gap-3 rounded-md border border-primary/20 bg-primary/10 px-3 py-2 text-xs font-medium text-primary">
-            <Users className="h-4 w-4" />
-            <span>
-              {gameState.players.length}
-              {' '}
-              player{gameState.players.length === 1 ? '' : 's'} connected
+          <div className="bg-muted px-4 py-2 rounded-xl flex items-center gap-2 border border-border">
+            <Users className="h-4 w-4 text-secondary" />
+            <span className="font-mono text-xs font-bold text-secondary uppercase">
+              {gameState.players.length} PLAYER{gameState.players.length === 1 ? '' : 'S'} CONNECTED
             </span>
           </div>
         </div>
 
-        <div className="mt-6 space-y-4">
-          <h3 className="heading-subtle text-muted-foreground text-xs">
-            Current table
-          </h3>
-          <div className="space-y-3">
+        {/* Current Table Section */}
+        <div className="mb-10">
+          <h2 className="font-mono text-xs font-bold text-muted-foreground uppercase tracking-widest mb-4">CURRENT TABLE</h2>
+          <div className="space-y-4">
             <AnimatePresence>
               {gameState.players.map((player, index) => {
                 const isSelf = player.id === playerId;
@@ -75,105 +90,166 @@ export function LobbyView({ gameState, playerId, onStartGame, onToggleReady }: L
                     exit={{ opacity: 0, y: -10 }}
                     transition={{ duration: 0.15 }}
                     className={cn(
-                      'flex items-center justify-between rounded-lg border border-border bg-muted/50 px-4 py-3',
-                      isSelf && 'ring-2 ring-primary/70 bg-primary/10'
+                      'flex items-center justify-between p-4 rounded-2xl bg-white border border-border shadow-sm transition-all',
+                      isSelf && 'border-2 border-primary ring-1 ring-primary/20 bg-surface-cream'
                     )}
                   >
-                    <div className="flex items-center gap-3">
-                      <div className="grid h-10 w-10 place-items-center rounded-full bg-primary text-primary-foreground font-semibold">
-                        {player.name[0]?.toUpperCase()}
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center text-white font-display text-lg font-bold">
+                        {player.name[0]?.toUpperCase() || '?'}
                       </div>
                       <div>
-                        <p className="font-medium" data-testid={`player-name-${index}`}>
-                          {player.name}
-                          {isSelf && <span className="text-xs text-muted-foreground"> - you</span>}
-                        </p>
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <SocketLiveIcon className={cn('h-3 w-3', player.connected ? 'text-primary' : 'text-destructive')} />
+                        <div className="flex items-center gap-2">
+                          <span className="font-display font-semibold text-foreground">{player.name}</span>
+                          {isSelf && <span className="font-mono text-[10px] text-muted-foreground">— YOU</span>}
+                        </div>
+                        <div className={cn(
+                          'flex items-center gap-1 text-xs font-semibold',
+                          player.connected ? 'text-action-emerald' : 'text-loss-crimson'
+                        )}>
+                          {player.connected ? (
+                            <CheckCircle2 className="h-4 w-4 text-action-emerald" />
+                          ) : (
+                            <XCircle className="h-4 w-4 text-loss-crimson" />
+                          )}
                           <span>{player.connected ? 'Online' : 'Offline'}</span>
                         </div>
                       </div>
                     </div>
 
                     <div className={cn(
-                      'flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold',
-                      isReady ? 'bg-primary/15 text-primary' : 'bg-muted text-muted-foreground'
+                      'px-4 py-1.5 rounded-full font-mono text-xs font-bold flex items-center gap-2 border',
+                      isReady 
+                        ? 'bg-action-emerald text-white border-action-emerald' 
+                        : 'bg-muted text-muted-foreground border-border'
                     )}>
-                      {isReady ? <Check className="h-3.5 w-3.5" /> : <Users className="h-3.5 w-3.5" />}
-                      <span>{isReady ? 'Ready' : 'Not Ready'}</span>
+                      {isReady && <Check className="h-3 w-3" />}
+                      {isReady ? 'Ready' : 'Not Ready'}
                     </div>
                   </motion.div>
                 );
               })}
+
+              {/* Waiting Spot Placeholder if less than 2 players */}
+              {gameState.players.length < 2 && (
+                <div className="flex items-center justify-between p-4 rounded-2xl bg-white/50 border border-dashed border-border">
+                  <div className="flex items-center gap-4 opacity-50">
+                    <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center text-muted-foreground">
+                      <UserPlus className="h-5 w-5" />
+                    </div>
+                    <span className="font-display text-sm font-semibold italic text-muted-foreground">Waiting for opponent...</span>
+                  </div>
+                  <div className="bg-muted text-muted-foreground px-4 py-1.5 rounded-full font-mono text-xs font-bold border border-border">
+                    Not Ready
+                  </div>
+                </div>
+              )}
             </AnimatePresence>
           </div>
         </div>
 
-        <div className="mt-8 rounded-lg border border-primary/25 bg-primary/10 p-6 text-center">
-          <div className="text-2xl font-mono font-semibold text-primary mb-1" data-testid="room-code-display">
-            <RoomCodeIcon className="mr-2 inline h-5 w-5 align-[-0.2em]" />
-            {gameState.roomCode}
+        {/* Room Code Section */}
+        <div className="bg-surface-cream border border-primary/10 rounded-2xl p-6 text-center mb-10 relative overflow-hidden">
+          <div className="absolute -right-4 -top-4 opacity-5 text-primary">
+            <Layers className="h-[120px] w-[120px]" />
           </div>
-          <p className="text-sm text-muted-foreground">
-            Share this code with friends so they can join your room.
-          </p>
-          <Button
-            variant="outline"
-            onClick={() => {
-              navigator.clipboard.writeText(gameState.roomCode);
-              toast({
-                title: 'Room code copied!',
-                description: 'Send this to your friends to get the table started.',
-              });
-            }}
-            data-testid="button-copy-code"
-            className="mt-4 inline-flex w-full items-center justify-center gap-2"
-          >
-            <Copy className="h-4 w-4" />
-            Copy room code
-          </Button>
+          <div className="flex flex-col items-center gap-2">
+            <div className="flex items-center gap-2 text-action-emerald mb-1">
+              <Hash className="h-6 w-6 text-victory-gold" />
+              <span className="font-display text-2xl font-bold tracking-widest text-primary">
+                {gameState.roomCode}
+              </span>
+            </div>
+            <p className="font-sans text-sm text-muted-foreground max-w-xs mx-auto mb-4">
+              Share this code with friends so they can join your room.
+            </p>
+            <button
+              onClick={handleCopyCode}
+              className={cn(
+                "w-full md:w-auto px-10 py-3 rounded-xl font-display font-semibold flex items-center justify-center gap-2 transition-all active:scale-95 group shadow-sm hover:shadow-md border-2",
+                copied 
+                  ? "bg-action-emerald/10 border-action-emerald text-action-emerald"
+                  : "bg-white border-border hover:border-victory-gold text-foreground"
+              )}
+            >
+              {copied ? (
+                <Check className="h-4 w-4" />
+              ) : (
+                <Copy className="h-4 w-4 group-hover:rotate-12 transition-transform" />
+              )}
+              {copied ? 'Copied!' : 'Copy room code'}
+            </button>
+          </div>
         </div>
 
-        <div className="mt-8 grid gap-3 sm:grid-cols-2">
-          <Button
-            variant={currentPlayer?.ready ? 'secondary' : 'default'}
+        {/* CTAs */}
+        <div className="grid md:grid-cols-2 gap-4 mb-10">
+          <button
             onClick={onToggleReady}
-            data-testid="button-toggle-ready"
-            className="flex items-center justify-center gap-2 py-3"
+            className={cn(
+              "chunky-button py-4 rounded-xl font-display font-bold flex items-center justify-center gap-3 transition-all",
+              currentPlayer?.ready 
+                ? "bg-loss-crimson hover:brightness-110 text-white shadow-[0_4px_0_0_rgba(190,18,60,0.4)]"
+                : "bg-action-emerald hover:brightness-110 text-white shadow-[0_4px_0_0_rgba(16,185,129,0.4)]"
+            )}
           >
-            {currentPlayer?.ready ? <Users className="h-4 w-4" /> : <Check className="h-4 w-4" />}
-            {currentPlayer?.ready ? 'Mark as not ready' : 'Ready up'}
-          </Button>
-
-          <Button
-            className="flex items-center justify-center gap-2 py-3"
-            disabled={!canStart}
+            {currentPlayer?.ready ? (
+              <XCircle className="h-5 w-5 animate-pulse" />
+            ) : (
+              <CheckCircle2 className="h-5 w-5" />
+            )}
+            {currentPlayer?.ready ? 'Not ready' : 'Ready up'}
+          </button>
+          
+          <button
             onClick={onStartGame}
-            data-testid="button-start-game"
-            variant={canStart ? 'default' : 'secondary'}
+            disabled={!canStart}
+            className={cn(
+              "py-4 rounded-xl font-display font-bold flex items-center justify-center gap-3 transition-all",
+              canStart
+                ? "chunky-button bg-primary hover:brightness-110 text-white shadow-[0_4px_0_0_rgba(0,53,39,0.4)]"
+                : "bg-muted text-muted-foreground cursor-not-allowed opacity-80 border border-border"
+            )}
           >
-            <StartGameIcon className="h-4 w-4" />
+            {canStart ? (
+              <PlayCircle className="h-5 w-5" />
+            ) : (
+              <Search className="h-5 w-5 animate-pulse" />
+            )}
             {canStart
               ? 'Start game'
               : gameState.players.length < 2
-              ? `Need ${2 - gameState.players.length} more player${gameState.players.length === 1 ? '' : 's'}`
-              : `Waiting for ${gameState.players.length - readyCount} player${gameState.players.length - readyCount === 1 ? '' : 's'} to ready up`}
-          </Button>
+              ? `Need 1 more player`
+              : `Waiting for opponent`}
+          </button>
         </div>
 
-        <div className="mt-8 rounded-lg border border-border bg-background/80 p-5">
-          <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-            <Sparkles className="h-4 w-4 text-accent" />
-            Quick rules
+        {/* Rules Section */}
+        <div className="bg-muted rounded-2xl p-6 border border-border">
+          <div className="flex items-center gap-2 mb-4 text-victory-gold">
+            <Star className="h-5 w-5 fill-current" />
+            <h3 className="font-display font-semibold text-primary">Quick rules</h3>
           </div>
-          <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
-            <li>Start with five cards and aim to get below five points.</li>
-            <li>Drop singles, pairs, trips, quads, or straights (3+).</li>
-            <li>Call when your total is under five to end the round.</li>
-            <li>A=1, 2-10 face value, J=11, Q=12, K=13.</li>
+          <ul className="space-y-3 font-sans text-sm text-muted-foreground">
+            <li className="flex gap-3">
+              <span className="text-victory-gold font-bold">01</span>
+              Start with five cards and aim to get below five points.
+            </li>
+            <li className="flex gap-3">
+              <span className="text-victory-gold font-bold">02</span>
+              Drop singles, pairs, trips, quads, or straights (3+).
+            </li>
+            <li className="flex gap-3">
+              <span className="text-victory-gold font-bold">03</span>
+              Call when your total is under five to end the round.
+            </li>
+            <li className="flex gap-3">
+              <span className="text-victory-gold font-bold">04</span>
+              A=1, 2-10 face value, J=11, Q=12, K=13.
+            </li>
           </ul>
         </div>
-      </section>
+      </div>
     </motion.div>
   );
 }

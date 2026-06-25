@@ -4,6 +4,7 @@ import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import process from "node:process";
+import esbuild from "esbuild";
 
 if (!globalThis.crypto || typeof globalThis.crypto.getRandomValues !== "function") {
   globalThis.crypto = webcrypto;
@@ -45,25 +46,22 @@ async function buildClient() {
 }
 
 async function buildServer() {
-  const esbuildBin = path.resolve(
-    projectRoot,
-    "node_modules",
-    ".bin",
-    process.platform === "win32" ? "esbuild.cmd" : "esbuild",
-  );
-
-  await run(esbuildBin, [
-    "server/index.ts",
-    "--bundle",
-    "--platform=node",
-    "--format=esm",
-    "--target=node20",
-    "--packages=external",
-    "--tsconfig=tsconfig.json",
-    "--outfile=dist/index.js",
-    "--external:./vite.js",
-    "--define:process.env.NODE_ENV=\"production\"",
-  ]);
+  console.log("Bundling server code with esbuild API...");
+  await esbuild.build({
+    entryPoints: ["server/index.ts"],
+    bundle: true,
+    platform: "node",
+    format: "esm",
+    target: "node20",
+    packages: "external",
+    tsconfig: "tsconfig.json",
+    outfile: "dist/index.js",
+    external: ["./vite.js"],
+    define: {
+      "process.env.NODE_ENV": '"production"',
+    },
+  });
+  console.log("Server bundling completed.");
 }
 
 async function main() {
