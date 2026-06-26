@@ -52,7 +52,7 @@ export function TurnTimer({ isActive, duration = 30, onTimeout }: TurnTimerProps
           exit={{ opacity: 0, y: 24, scale: 0.95 }}
           transition={{ type: 'spring', stiffness: 320, damping: 28 }}
           className={cn(
-            'fixed bottom-6 left-6 z-[60] bg-white rounded-3xl p-4 shadow-2xl border border-outline-variant/30 flex items-center gap-4 transition-transform hover:scale-105 text-foreground',
+            'fixed bottom-6 left-6 z-[60] bg-card rounded-3xl p-4 shadow-2xl border border-border flex items-center gap-4 transition-transform hover:scale-105 text-foreground',
             urgency && 'border-loss-crimson/50'
           )}
         >

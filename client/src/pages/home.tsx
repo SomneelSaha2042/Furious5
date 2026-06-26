@@ -8,6 +8,7 @@ import { Card } from '@/components/card'; // We can use the Card component we wr
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { BrandMark } from '@/components/brand-mark';
 import { useGameSocket } from '@/hooks/use-game-socket';
 import {
   RotateCcw,
@@ -144,9 +145,7 @@ export default function Home() {
         {/* Premium Header */}
         <header className="flex flex-col gap-4 border-b border-white/10 pb-5 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-center gap-4">
-            <div className="bg-surface-cream p-2.5 rounded-xl shadow-md flex items-center justify-center">
-              <span className="font-display font-extrabold text-3xl tracking-tighter text-victory-gold leading-none">Furious Five</span>
-            </div>
+            <BrandMark className="h-16 w-16 p-1.5 sm:h-20 sm:w-20" imageClassName="h-full w-full" />
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <Badge className="h-6 border-action-emerald/25 bg-action-emerald/20 text-action-emerald font-semibold uppercase tracking-wider text-[10px]">Live table</Badge>
@@ -200,7 +199,7 @@ export default function Home() {
                       value={playerName}
                       onChange={(event) => setPlayerName(event.target.value)}
                       data-testid="input-player-name"
-                      className="bg-white border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-primary focus-visible:border-primary font-mono rounded-xl"
+                      className="bg-card border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-primary focus-visible:border-primary font-mono rounded-xl"
                     />
                   </div>
 
@@ -245,7 +244,7 @@ export default function Home() {
                       value={playerName}
                       onChange={(event) => setPlayerName(event.target.value)}
                       data-testid="input-join-name"
-                      className="bg-white border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-primary focus-visible:border-primary font-mono rounded-xl"
+                      className="bg-card border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-primary focus-visible:border-primary font-mono rounded-xl"
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -256,7 +255,7 @@ export default function Home() {
                       value={joinRoomCode}
                       onChange={(event) => setJoinRoomCode(event.target.value.toUpperCase())}
                       data-testid="input-room-code"
-                      className="bg-white border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-primary focus-visible:border-primary font-mono rounded-xl tracking-widest"
+                      className="bg-card border-border text-foreground placeholder:text-muted-foreground focus-visible:ring-primary focus-visible:border-primary font-mono rounded-xl tracking-widest"
                     />
                   </div>
                   <button

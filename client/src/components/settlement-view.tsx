@@ -66,9 +66,9 @@ export function SettlementView({ gameState, onStartNewRound }: SettlementViewPro
                   className={cn(
                     "p-6 sm:p-8 rounded-2xl shadow-sm hover:scale-[1.02] transition-transform duration-300 border",
                     isPositive 
-                      ? "bg-white border-action-emerald/30" 
+                      ? "bg-card border-action-emerald/30" 
                       : isNegative 
-                      ? "bg-white border-loss-crimson/30"
+                      ? "bg-card border-loss-crimson/30"
                       : "bg-muted border-border"
                   )}
                 >
@@ -119,7 +119,7 @@ export function SettlementView({ gameState, onStartNewRound }: SettlementViewPro
           </div>
 
           {/* Running Totals Bento Style */}
-          <div className="bg-white border border-border rounded-2xl p-6 max-w-2xl mx-auto shadow-sm">
+          <div className="bg-card border border-border rounded-2xl p-6 max-w-2xl mx-auto shadow-sm">
             <div className="flex items-center justify-center gap-2 mb-6 text-victory-gold">
               <BarChart3 className="h-5 w-5 text-victory-gold" />
               <h4 className="font-mono text-xs font-bold uppercase tracking-widest text-muted-foreground">Running totals</h4>

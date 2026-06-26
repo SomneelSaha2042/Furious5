@@ -90,7 +90,7 @@ export function LobbyView({ gameState, playerId, onStartGame, onToggleReady }: L
                     exit={{ opacity: 0, y: -10 }}
                     transition={{ duration: 0.15 }}
                     className={cn(
-                      'flex items-center justify-between p-4 rounded-2xl bg-white border border-border shadow-sm transition-all',
+                      'flex items-center justify-between p-4 rounded-2xl bg-card border border-border shadow-sm transition-all',
                       isSelf && 'border-2 border-primary ring-1 ring-primary/20 bg-surface-cream'
                     )}
                   >
@@ -169,7 +169,7 @@ export function LobbyView({ gameState, playerId, onStartGame, onToggleReady }: L
                 "w-full md:w-auto px-10 py-3 rounded-xl font-display font-semibold flex items-center justify-center gap-2 transition-all active:scale-95 group shadow-sm hover:shadow-md border-2",
                 copied 
                   ? "bg-action-emerald/10 border-action-emerald text-action-emerald"
-                  : "bg-white border-border hover:border-victory-gold text-foreground"
+                  : "bg-card border-border hover:border-victory-gold text-foreground"
               )}
             >
               {copied ? (

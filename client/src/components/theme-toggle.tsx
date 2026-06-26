@@ -1,20 +1,23 @@
 import { Button } from '@/components/ui/button';
 import { useTheme } from './theme-provider';
-import { ThemeToggleIcon } from '@/components/icons/Furious5Icons';
+import { Moon, Sun } from 'lucide-react';
 
 export function ThemeToggle() {
-  const { theme, setTheme } = useTheme();
+  const { resolvedTheme, setTheme } = useTheme();
+  const isDark = resolvedTheme === 'dark';
 
   return (
     <Button
       variant="outline"
       size="icon"
-      onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+      onClick={() => setTheme(isDark ? 'light' : 'dark')}
       data-testid="theme-toggle"
-      className="h-9 w-9"
+      aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+      title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+      className="h-10 w-10 rounded-full border-2 border-victory-gold/70 bg-surface-cream text-primary shadow-lg shadow-black/20 hover:bg-victory-gold hover:text-primary focus-visible:ring-victory-gold"
     >
-      <ThemeToggleIcon className="h-4 w-4 transition-transform duration-200 dark:rotate-45" />
-      <span className="sr-only">Toggle theme</span>
+      {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+      <span className="sr-only">{isDark ? 'Switch to light mode' : 'Switch to dark mode'}</span>
     </Button>
   );
 }

@@ -23,7 +23,7 @@ assets = [
     ("https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ7Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpaCiVodG1sXzlhMzk4MTQ5MGJjMDQ2MTQ5MmM2YTkzYmFiYmQ2ZDZjEgsSBxDDt4W0thIYAZIBIwoKcHJvamVjdF9pZBIVQhMzNzExNTgwMTMwMjE2NTM5Nzg2&filename=&opi=89354086", "game_lobby.html"),
 ]
 
-out_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "stitch-assets")
+out_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "assets", "stitch-assets")
 os.makedirs(out_dir, exist_ok=True)
 
 print(f"Downloading assets to {out_dir}...")

@@ -4,6 +4,7 @@ import type { GameState } from '@shared/game-types';
 import { LobbyView } from '@/components/lobby-view';
 import { GameTableView } from '@/components/game-table-view';
 import { SettlementView } from '@/components/settlement-view';
+import { BrandMark } from '@/components/brand-mark';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { useGameSocket } from '@/hooks/use-game-socket';
 import { Button } from '@/components/ui/button';
@@ -74,7 +75,7 @@ export default function Game() {
       <div className="bg-felt-green felt-texture flex min-h-screen items-center justify-center px-4 text-white">
         <div className="space-y-3 text-center">
           <Loader2 className="mx-auto h-8 w-8 animate-spin text-victory-gold" />
-          <p className="text-sm font-semibold text-victory-gold/80">Connecting to Furious Five table...</p>
+          <p className="text-sm font-semibold text-victory-gold/80">Connecting to table...</p>
         </div>
       </div>
     );
@@ -172,9 +173,7 @@ export default function Game() {
           : "bg-felt-green/95 backdrop-blur-md fixed top-0 left-0 text-white"
       )}>
         <div className="flex items-center gap-4">
-          <div className="bg-surface-cream p-2 rounded-lg shadow-sm flex items-center justify-center">
-            <span className="font-display font-extrabold text-2xl tracking-tighter text-victory-gold leading-none">Furious Five</span>
-          </div>
+          <BrandMark className="h-12 w-12 p-1 rounded-lg shadow-sm" imageClassName="h-full w-full" />
           <div className="hidden md:flex items-center gap-2 px-3 py-1 bg-primary/30 rounded-full border border-white/20">
             <Hash className="h-4 w-4 text-victory-gold" />
             <span className="font-mono text-xs font-bold text-white">{roomCode}</span>

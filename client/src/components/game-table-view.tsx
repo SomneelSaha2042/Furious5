@@ -103,7 +103,7 @@ export function GameTableView({
       <header className="grid gap-6 md:grid-cols-3 items-stretch">
         {/* Active Turn */}
         <motion.div
-          className="bg-white rounded-2xl p-6 card-shadow border border-outline-variant/30 relative overflow-hidden text-foreground"
+          className="bg-card rounded-2xl p-6 card-shadow border border-border relative overflow-hidden text-foreground"
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.18 }}
@@ -136,7 +136,7 @@ export function GameTableView({
 
         {/* Round & Timer */}
         <motion.div
-          className="bg-white rounded-2xl p-6 card-shadow border border-outline-variant/30 flex flex-col justify-center text-foreground"
+          className="bg-card rounded-2xl p-6 card-shadow border border-border flex flex-col justify-center text-foreground"
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1, duration: 0.2 }}
@@ -161,7 +161,7 @@ export function GameTableView({
 
         {/* Deck Remaining */}
         <motion.div
-          className="bg-white rounded-2xl p-6 card-shadow border border-outline-variant/30 text-foreground"
+          className="bg-card rounded-2xl p-6 card-shadow border border-border text-foreground"
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.12, duration: 0.2 }}

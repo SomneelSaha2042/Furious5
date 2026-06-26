@@ -113,7 +113,7 @@ export function PlayerHand({ gameState, playerId, onCall, onDropCards, onDrawFro
 
   return (
     <motion.section
-      className="bg-white rounded-[24px] p-6 sm:p-8 card-shadow border border-outline-variant/30 relative text-foreground"
+      className="bg-card rounded-[24px] p-6 sm:p-8 card-shadow border border-border relative text-foreground"
       layout
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
@@ -160,7 +160,7 @@ export function PlayerHand({ gameState, playerId, onCall, onDropCards, onDrawFro
                 onClick={() => handleCardClick(card)}
                 className={cn(
                   cardIsInteractive ? 'cursor-pointer' : 'cursor-not-allowed opacity-75',
-                  !cardIsInteractive && 'hover:translate-y-0 hover:shadow-md hover:border-outline-variant/30'
+                  !cardIsInteractive && 'hover:translate-y-0 hover:shadow-md hover:border-border'
                 )}
               />
             </div>
@@ -168,7 +168,7 @@ export function PlayerHand({ gameState, playerId, onCall, onDropCards, onDrawFro
         })}
         {currentPlayer.hand.length === 0 && (
           <div className="flex-shrink-0 opacity-20">
-            <div className="w-24 h-36 rounded-xl border-2 border-dashed border-outline-variant"></div>
+            <div className="w-24 h-36 rounded-xl border-2 border-dashed border-border"></div>
           </div>
         )}
       </div>

@@ -2,7 +2,7 @@ import subprocess
 import os
 
 edge_path = r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
-out_path = r"C:\Users\somne\Documents\Furious5\stitch-assets\landing_page.png"
+out_path = r"C:\Users\somne\Documents\Furious5\assets\stitch-assets\landing_page.png"
 cmd = [
     edge_path, 
     "--headless", 

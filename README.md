@@ -1,19 +1,113 @@
 # Furious Five
 
-Real-time multiplayer WebSocket project with Redis-backed state, safer room mutations, reconnect recovery, health checks, Docker deployment, and load testing.
+<p align="center">
+  <img src="assets/F5.png" alt="Furious Five icon" width="140" />
+</p>
 
-This repo is a TypeScript full-stack application for experimenting with a low-latency multiplayer room system. The domain is a card-table experience, but the interesting parts are the real-time pieces: WebSocket session coordination, Redis persistence, room state transitions, reconnect behavior, and deployment on Railway.
+<p align="center">
+  <strong>A real-time multiplayer card table built with React, Express, WebSockets, and Redis-ready room state.</strong>
+</p>
 
-## Production Architecture
+<p align="center">
+  <a href="https://github.com/SomneelSaha2042/Furious5/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/SomneelSaha2042/Furious5/actions/workflows/ci.yml/badge.svg" /></a>
+  <a href="https://github.com/SomneelSaha2042/Furious5/actions/workflows/build.yml"><img alt="Build and Test" src="https://github.com/SomneelSaha2042/Furious5/actions/workflows/build.yml/badge.svg" /></a>
+  <a href="https://github.com/SomneelSaha2042/Furious5/actions/workflows/docker-build.yml"><img alt="Docker" src="https://github.com/SomneelSaha2042/Furious5/actions/workflows/docker-build.yml/badge.svg" /></a>
+  <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-strict-3178c6" />
+  <img alt="Tests" src="https://img.shields.io/badge/tests-2%20passing-brightgreen" />
+  <img alt="License" src="https://img.shields.io/badge/license-MIT-blue" />
+</p>
+
+## About
+
+Furious Five is a low-latency, room-based card game designed around quick table reads, clean card drops, reconnect-safe multiplayer sessions, and a polished felt-table interface. Players create private rooms, invite friends with a room code, ready up in the lobby, and play through fast rounds where every drop, draw, and call can swing the settlement.
+
+The project is also a production-minded realtime systems exercise. It keeps the game approachable on the surface while exercising practical infrastructure concerns underneath: WebSocket session coordination, resilient room mutations, Redis-backed persistence, health checks, Docker deployment, and CI-backed validation.
+
+## Project Bio
+
+Furious Five started as a focused multiplayer card-table experiment and has grown into a full-stack realtime app. The experience aims to feel immediate and tactile: a private table, five-card hands, clear turn cues, fast reconnects, and enough backend discipline to keep state consistent when multiple players act around the same room.
+
+The codebase is intentionally small enough to understand end to end, but structured like a deployable service rather than a throwaway prototype.
+
+## Gameplay Snapshot
+
+- 2-5 players join a private room.
+- Each player starts with five cards.
+- Card values are `A=1`, `2-10` face value, `J=11`, `Q=12`, and `K=13`.
+- Players drop singles, pairs, trips, quads, or straights of three or more cards.
+- After dropping, a player draws from the deck or from the table when allowed.
+- A player can call when their hand total is low enough to trigger settlement.
+- Settlement compares hand totals and applies chip deltas for the round.
+
+The executable source of truth for gameplay lives in [shared/game-engine.ts](shared/game-engine.ts).
+
+## Current Validation
+
+Last local verification:
+
+```text
+npm run check                         passing
+npx tsx --test server/room-join.test.ts  2 passing tests
+```
+
+Current focused tests cover:
+
+- Same-name lobby rejoin reclaiming the original player.
+- New-name lobby join adding a new player.
+
+The GitHub Actions workflows also run type checking, production builds, artifact checks, and Docker image builds.
+
+## Features
+
+- Realtime multiplayer over WebSockets at `/ws`.
+- Private room creation and joining with short room codes.
+- Lobby ready state and game start flow.
+- Reconnect recovery using persisted room and player session IDs.
+- Shared game engine for deterministic state transitions.
+- Per-room mutation safety through `storage.mutateRoom(...)`.
+- Redis-backed room persistence when `REDIS_URL` is configured.
+- Local in-memory storage fallback for development.
+- Runtime health endpoints with room, socket, Redis, memory, and uptime metrics.
+- Docker-first deployment path for Railway and other container hosts.
+
+## Tech Stack
+
+Frontend:
+
+- React 18
+- TypeScript
+- Vite
+- Tailwind CSS and shadcn/ui
+- Framer Motion
+- Wouter
+
+Backend:
+
+- Node.js 20+
+- Express
+- `ws` WebSocket server
+- Redis-ready storage adapter
+- Zod validation
+- Helmet, CORS, compression, and rate limiting
+
+Build and deployment:
+
+- Vite frontend build
+- esbuild server bundle
+- Multi-stage Dockerfile
+- GitHub Actions CI
+- Railway-compatible `PORT` handling
+
+## Architecture
 
 ```text
 Browser clients
   -> React frontend
   -> WebSocket events over /ws
   -> Express Node service
-     -> serves static React build
+     -> serves the React app
      -> owns in-process WebSocket connection maps
-     -> validates and applies game/room mutations
+     -> validates and applies game mutations
      -> persists room state in Redis when REDIS_URL is set
      -> exposes health and metrics endpoints
 ```
@@ -26,61 +120,13 @@ Current deployment target:
 1 app replica
 ```
 
-In-memory storage is a local-development fallback. Railway-style deployments should use Redis for room state.
-
-## Current Capabilities
-
-- WebSocket server using `ws` at `/ws`
-- Redis-backed room state persistence when `REDIS_URL` is configured
-- Local `MemStorage` fallback when `REDIS_URL` is not set
-- Per-room mutation safety through `storage.mutateRoom(...)`
-- Redis token-based room locks to reduce stale concurrent writes
-- Reconnect recovery using saved `roomCode` and `playerId`
-- Room TTL refresh and active-room tracking in Redis
-- Runtime health checks with Redis status, active rooms, active sockets, memory, and uptime
-- Docker-first deployment path for Railway
-- Configurable WebSocket load test for roughly 100 concurrent users
-
-## Learning Focus
-
-- Moving a real-time WebSocket app beyond a purely in-memory prototype
-- Using one storage abstraction for local development and Redis-backed deployments
-- Reducing stale-write risk in room-based multiplayer state with mutation locks
-- Supporting reconnect and restart recovery for active rooms
-- Adding practical health checks and load-test visibility
-- Deploying a single-service React + Express app through a Dockerfile
-
-## Stack
-
-Frontend:
-
-- React 18
-- TypeScript
-- Tailwind CSS and shadcn/ui
-- Framer Motion
-- Wouter
-
-Backend:
-
-- Node.js 20
-- Express
-- `ws` WebSocket server
-- Redis-backed deployment storage
-- Zod validation
-- Helmet, CORS, compression, and rate limiting
-
-Build and deployment:
-
-- Vite frontend build
-- esbuild server bundle
-- Multi-stage Dockerfile
-- Railway-compatible `PORT` handling
+Multi-replica deployment is not enabled yet. Room state can live in Redis, but live WebSocket broadcasts are still local to the process. Scaling beyond one app replica needs Redis Pub/Sub or another distributed fanout layer.
 
 ## Runtime Storage
 
 Storage is selected at startup:
 
-```ts
+```text
 REDIS_URL set    -> RedisStorage
 REDIS_URL absent -> MemStorage
 ```
@@ -101,15 +147,15 @@ REDIS_LOCK_TTL_MS=5000
 REDIS_LOCK_TIMEOUT_MS=2000
 ```
 
-Important state changes go through:
+Important room changes go through:
 
 ```ts
 storage.mutateRoom(roomCode, mutator)
 ```
 
-That gives the app one mutation path for room joins, ready state changes, turn actions, reconnect status updates, and delayed disconnect handling.
+That gives the app one mutation path for joins, ready state changes, turn actions, reconnect status updates, and delayed disconnect handling.
 
-## WebSocket Flow
+## WebSocket Contract
 
 Clients connect to:
 
@@ -144,14 +190,6 @@ error
 pong
 ```
 
-WebSocket connections stay in memory:
-
-```ts
-Map<roomCode, Set<WebSocket>>
-```
-
-This keeps single-replica broadcasts simple and fast. It also means multi-replica deployment is intentionally not enabled yet.
-
 ## Health Checks
 
 Endpoints:
@@ -184,6 +222,7 @@ If Redis cannot be queried, health returns `status: "degraded"` and includes Red
 
 ```text
 client/src/              React app
+client/public/icons/     Web app icons and PWA assets
 server/index.ts          Express entrypoint, middleware, /health
 server/routes.ts         API routes and WebSocket handlers
 server/storage/          MemStorage, RedisStorage, mutation API
@@ -306,19 +345,6 @@ Watch:
 - p95 latency
 - Redis status
 - Memory usage
-
-## Scaling Notes
-
-Current intended deployment shape:
-
-```text
-1 Node service replica
-1 Redis service
-Redis room state
-in-memory WebSocket connection map
-```
-
-Do not run multiple app replicas yet. Room state is shared through Redis, but WebSocket broadcasts are still local to the process. Multi-replica support needs Redis Pub/Sub or another distributed fanout layer.
 
 ## License
 

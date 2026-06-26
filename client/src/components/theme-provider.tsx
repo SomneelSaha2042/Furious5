@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useState } from 'react';
 
 type ResolvedTheme = 'dark' | 'light';
 
@@ -12,11 +12,13 @@ type ThemeProviderProps = {
 
 type ThemeProviderState = {
   theme: Theme;
+  resolvedTheme: ResolvedTheme;
   setTheme: (theme: Theme) => void;
 };
 
 const initialState: ThemeProviderState = {
   theme: 'system',
+  resolvedTheme: 'light',
   setTheme: () => null,
 };
 
@@ -56,6 +58,11 @@ const THEME_TOKENS: Record<ResolvedTheme, Record<string, string>> = {
     '--sidebar-accent-foreground': '#1f8a70',
     '--sidebar-border': 'rgba(31, 138, 112, 0.12)',
     '--sidebar-ring': 'rgba(31, 138, 112, 0.5)',
+    '--felt-green': '#145a3d',
+    '--action-emerald': '#2ea285',
+    '--victory-gold': '#f6c542',
+    '--loss-crimson': '#c24747',
+    '--surface-cream': '#fdfbf5',
     '--felt-base': '#145a3d',
     '--felt-grid': 'rgba(11, 102, 66, 0.28)',
     '--felt-border': 'rgba(10, 55, 36, 0.45)',
@@ -109,6 +116,11 @@ const THEME_TOKENS: Record<ResolvedTheme, Record<string, string>> = {
     '--sidebar-accent-foreground': '#47c7a4',
     '--sidebar-border': 'rgba(71, 199, 164, 0.2)',
     '--sidebar-ring': 'rgba(71, 199, 164, 0.45)',
+    '--felt-green': '#0a3424',
+    '--action-emerald': '#47c7a4',
+    '--victory-gold': '#f6c542',
+    '--loss-crimson': '#ff7269',
+    '--surface-cream': '#10161f',
     '--felt-base': '#0a3424',
     '--felt-grid': 'rgba(22, 110, 78, 0.26)',
     '--felt-border': 'rgba(5, 26, 17, 0.6)',
@@ -161,7 +173,7 @@ export function ThemeProvider({
     return theme === 'system' ? resolveSystemTheme() : theme;
   }, [theme]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (typeof window === 'undefined') return;
 
     const root = window.document.documentElement;
@@ -193,6 +205,7 @@ export function ThemeProvider({
 
   const value = {
     theme,
+    resolvedTheme,
     setTheme: (theme: Theme) => {
       localStorage.setItem(storageKey, theme);
       setTheme(theme);
