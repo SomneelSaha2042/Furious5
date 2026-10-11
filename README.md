@@ -91,7 +91,7 @@ Backend:
 - Express
 - `ws` WebSocket server
 - Redis-ready storage adapter for live room state
-- Postgres (Supabase) via Drizzle ORM for accounts and game history
+- Postgres via Drizzle ORM for accounts and game history
 - scrypt password hashing, opaque session-cookie auth
 - Zod validation
 - Helmet, CORS, compression, and rate limiting
@@ -126,7 +126,7 @@ Current deployment target:
 ```text
 1 Dockerized Node service
 1 Redis service
-1 Postgres database (Supabase)
+1 Postgres database
 1 app replica
 ```
 
@@ -183,12 +183,9 @@ Every settlement writes `round_history` plus the running totals on `users` in on
 
 The leaderboard (`/api/leaderboard/net`, `/api/leaderboard/rounds`) reads only from `users`, never aggregates over `round_history`. That's deliberate: `users` is bounded by account count, while `round_history` grows with every round ever played and would get more expensive to aggregate the more the app is used. `roundsWon` is maintained incrementally at settlement time for exactly this reason.
 
-**Supabase pooler mode matters.** Use the **session pooler** (port `5432`), not the transaction pooler (`6543`) or the direct connection. The app is one long-running process, not serverless, so:
-
-- Direct connection is IPv6-only unless you pay for Supabase's IPv4 add-on.
-- Transaction-mode pooling does not reliably support prepared statements — a statement prepared during one transaction can silently misbehave if a later transaction lands on a different pooled backend connection. This produced a real bug during development: a second settlement in the same room reported success but never persisted, with no error anywhere, because the fix (`prepare: false` in `server/db.ts`) wasn't in place yet.
-
-`prepare: false` is set regardless, since it's strictly safer on both modes and costs only a little query-plan caching.
+`DATABASE_URL` can point at a direct Postgres connection or a pooler. The app
+disables prepared statements so transaction-mode poolers remain safe, at the
+small cost of some query-plan caching.
 
 ## WebSocket Contract
 
@@ -302,6 +299,7 @@ Local development uses `MemStorage` unless `REDIS_URL` is set, and accounts/hist
 ```bash
 npm run dev       # Start the development server
 npm run check     # TypeScript check
+npm run db:push   # Apply the Drizzle schema to the configured database
 npm run build     # Build client and server into dist/
 npm start         # Run the production build
 npm run load:ws   # Run the WebSocket load test
@@ -326,10 +324,10 @@ REDIS_URL=redis://...
 ROOM_TTL_SECONDS=14400
 REDIS_LOCK_TTL_MS=5000
 REDIS_LOCK_TIMEOUT_MS=2000
-DATABASE_URL=postgresql://postgres.xxxxx:password@aws-region.pooler.supabase.com:5432/postgres
+DATABASE_URL=postgresql://user:password@host:5432/database
 ```
 
-`REDIS_URL` is the switch between local fallback storage and production Redis persistence. `DATABASE_URL` is the same switch for accounts/history/leaderboard — use Supabase's **session pooler** connection string (port `5432`); see [Accounts and Game History](#accounts-and-game-history) for why.
+`REDIS_URL` is the switch between local fallback storage and production Redis persistence. `DATABASE_URL` is the same switch for accounts, history, and leaderboards.
 
 ## Deployment
 
@@ -342,8 +340,12 @@ NODE_ENV=production
 CORS_ORIGIN=https://your-app.up.railway.app
 ROOM_TTL_SECONDS=14400
 REDIS_URL=${{Redis.REDIS_URL}}
-DATABASE_URL=postgresql://postgres.xxxxx:password@aws-region.pooler.supabase.com:5432/postgres
+DATABASE_URL=${{Postgres.DATABASE_URL}}
 ```
+
+For a fresh Railway Postgres database, run `npm run db:push` once with that
+database's connection string before using accounts or leaderboards. Do not run
+it against the old database if you are intentionally starting fresh.
 
 Keep app replicas at:
 

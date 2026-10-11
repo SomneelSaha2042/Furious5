@@ -1,6 +1,9 @@
 # Railway Hobby Deployment
 
-Furious5 should deploy as one Node web service plus one Redis service. Do not enable multiple app replicas until room fanout is moved to Redis Pub/Sub or a Socket.IO Redis adapter style setup. The current WebSocket connection map is intentionally in process.
+Furious5 should deploy as one Node web service plus one Redis service and one
+PostgreSQL service. Do not enable multiple app replicas until room fanout is
+moved to Redis Pub/Sub or a Socket.IO Redis adapter style setup. The current
+WebSocket connection map is intentionally in process.
 
 ## Project Setup
 
@@ -9,7 +12,8 @@ Furious5 should deploy as one Node web service plus one Redis service. Do not en
 3. Do not set custom Railway build or start commands unless you intentionally stop using Docker.
 4. Set replicas to `1`.
 5. Add a Redis database service in the same Railway project.
-6. Keep Redis private to the project unless temporary debugging requires otherwise.
+6. Add a PostgreSQL database service in the same Railway project.
+7. Keep Redis and PostgreSQL private to the project unless temporary debugging requires otherwise.
 
 The Dockerfile runs `npm ci`, `npm run build`, prunes development dependencies, and starts `node dist/index.js`. Railway should only need the Dockerfile plus the environment variables below.
 
@@ -22,9 +26,25 @@ NODE_ENV=production
 CORS_ORIGIN=https://your-app.up.railway.app
 ROOM_TTL_SECONDS=14400
 REDIS_URL=${{Redis.REDIS_URL}}
+DATABASE_URL=${{Postgres.DATABASE_URL}}
 ```
 
 After adding a custom domain, replace `CORS_ORIGIN` with the custom HTTPS origin. Do not leave `CORS_ORIGIN=*` for production.
+
+## Fresh database setup
+
+This migration intentionally starts with an empty database. After adding the
+Railway PostgreSQL service and linking `DATABASE_URL` above, apply the schema
+once:
+
+```bash
+DATABASE_URL=<railway-postgres-connection-string> npm run db:push
+```
+
+Run this from a shell that can reach the Railway database. If you run it from
+your laptop, temporarily use the database's public connection string, then
+remove public access afterward. Never run it against the old Supabase database
+when starting fresh.
 
 ## Smoke Checks
 
@@ -32,6 +52,8 @@ After deployment, verify the app and Redis state backend:
 
 ```bash
 curl https://your-app.up.railway.app/health
+curl https://your-app.up.railway.app/api/leaderboard/net
+curl https://your-app.up.railway.app/api/leaderboard/rounds
 ```
 
 Expected fields include:
@@ -44,6 +66,13 @@ Expected fields include:
   "activeSockets": 0
 }
 ```
+
+The leaderboard endpoints should return HTTP 200 with `success: true` (an
+empty `leaderboard` is valid for a new database).
+
+Enable Railway Postgres volume backups and keep a periodic `pg_dump` outside
+the project. Railway's Postgres template uses a persistent volume, but backup
+and restore drills remain an application-owner responsibility.
 
 Then confirm the WebSocket endpoint is reachable:
 
